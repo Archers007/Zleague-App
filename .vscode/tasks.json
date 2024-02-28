@@ -1,0 +1,37 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Tunnel",
+			"type": "shell",
+			"command": "Echo room-IDOLATRY-goner-straw | sudo -S cloudflared tunnel run --token eyJhIjoiMTZiMDE0ZWM3ZjZjN2M3OGI3N2NhMjFhMzk4NTE2MTMiLCJ0IjoiMGI4MWQ1OTctYjBkZi00ZTY4LTk0ZTAtYzNiZWE1YjEwZTU3IiwicyI6Ik1qRXpNRFZqTXpNdE1HWTRNaTAwWkdOakxXSXpZelV0TUdJeE0yTTJOV0kyTmpNMiJ9 --url http://localhost:9999",
+			"presentation": {
+			"reveal": "never",
+			"panel": "new",
+			"echo": true,
+			"focus": false
+			},
+			"group": "none",
+			"isBackground": false,
+			"runOptions": {
+			"runOn": "folderOpen"
+			}
+		},
+		{
+			"label": "Server",
+			"type": "shell",
+			"command": "npm run dev",
+			"presentation": {
+			"reveal": "never",
+			"panel": "new",
+			"echo": true,
+			"focus": false
+			},
+			"group": "none",
+			"isBackground": false,
+			"runOptions": {
+			"runOn": "folderOpen"
+			}
+		},
+	]
+}

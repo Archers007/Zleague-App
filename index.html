@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZLEAGUE API Request</title>
+    <style>
+        /* Dark grey background */
+        body {
+            background-color: #222;
+            color: #fff;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        /* Add your zleague styles here */
+        .zleague-button {
+            background-color: #2c3e50;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* subtle glow effect */
+            margin: 0 auto; /* Center horizontally */
+            display: block; /* Ensure block-level element behavior */
+        }
+
+
+        .zleague-button:hover {
+            background-color: #34495e;
+        }
+
+        /* Style for container to display iframes side by side */
+        .iframe-container {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px; /* Add padding to the container */
+        }
+
+        /* Style for each iframe */
+        .iframe-container iframe {
+            width: 48%; /* Adjust as needed */
+            height: 500px;
+            border: 2px solid #fff; /* White outline */
+            border-radius: 5px;
+            box-shadow: white 0 0 10px; /* Darker glow effect */
+        }
+
+        /* Style for the form container */
+        .form-container {
+            width: 30%;
+            margin-top: 20px;
+            padding: 20px;
+            border: 2px solid #fff; /* White outline */
+            border-radius: 5px;
+            box-shadow: white 0 0 10px; /* Darker glow effect */
+        }
+
+        /* Style for form fields */
+        .form-container input[type="text"],
+        .form-container input[type="number"],
+        .form-container input[type="date"],
+        .form-container input[type="submit"],
+        .form-container textarea {
+            width: calc(100% - 10px);
+            margin-bottom: 10px;
+            padding: 5px;
+            border-radius: 3px;
+            border: 1px solid #ccc;
+        }
+
+        /* Style for form submit button */
+        .form-container input[type="submit"] {
+            background-color: #2c3e50;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .form-container input[type="submit"]:hover {
+            background-color: #34495e;
+        }
+
+        .forms{
+            display: flex;
+            justify-content: space-evenly;
+        }
+    </style>
+</head>
+<body>
+    <div class="iframe-container">
+        <iframe src="/tournament"></iframe>
+        <iframe src="/account"></iframe>
+    </div>
+    <!-- a button that hits /register/apex/10 -->
+    <!-- <button class="zleague-button" onclick="fetch('/register/apex/10')">Register for Apex Legends 10$</button>
+
+    <div class="forms">
+        <div class="form-container" style="float: left;">
+            <h2>Register Form</h2>
+            <form id="registerForm" action="/register" method="POST">
+                <label for="legend">Legend:</label><br>
+                <input type="text" id="legend" name="legend" required><br>
+                <label for="amount">Amount:</label><br>
+                <input type="text" id="amount" name="amount" required><br>
+                <label for="paymentMethod">Credit / Cash:</label><br>
+                <select id="paymentMethod" name="paymentMethod" required>
+                    <option value="credit">Credit</option>
+                    <option value="cash">Cash</option>
+                </select><br><br>
+                <input type="submit" value="Submit">
+            </form>
+        </div>
+
+        <div class="form-container" style="float: right;">
+            <h2>Credit Card Form</h2>
+            <form id="creditCardForm">
+                <label for="creditCardNumber">Credit Card Number:</label><br>
+                <input type="text" id="creditCardNumber" name="creditCardNumber" required><br>
+                <label for="expirationDate">Expiration Date:</label><br>
+                <input type="date" id="expirationDate" name="expirationDate" required><br>
+                <label for="cvv">CVV:</label><br>
+                <input type="text" id="cvv" name="cvv" required><br>
+                <label for="address">Address:</label><br>
+                <textarea id="address" name="address" required></textarea><br><br>
+                <input type="submit" value="Submit">
+            </form>
+        </div>
+    </div> -->
+
+    <script>
+        // JavaScript code to handle form submission for credit card form
+        document.getElementById("creditCardForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+            var form = event.target;
+            var formData = new FormData(form);
+            var requestBody = {};
+            formData.forEach(function(value, key) {
+                requestBody[key] = value;
+            });
+            fetch("/process_credit_card", {
+                method: "POST",
+                body: JSON.stringify(requestBody),
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    console.log("Payment successful!");
+                    // You can add further actions here like displaying a success message or redirecting
+                } else {
+                    console.error("Payment failed!");
+                    // You can add further actions here like displaying an error message
+                }
+            })
+            .catch(error => {
+                console.error("Error occurred during payment:", error);
+                // You can add further actions here like displaying an error message
+            });
+        });
+    </script>
+</body>
+</html>
