@@ -10,43 +10,49 @@ const { Console } = require('console');
 
 //https://www.zleague.gg/v2/wallet/cash-transactions
 
-verrifyAuth();
+app.use(express.static('public'));
 
 app.get('/', (req, res) => {
     res.send(fs.readFileSync('index.html', 'utf-8'));
 });
 
-//open auth.json file and get the authToken use jwt to check expiry if expired get new token
-async function verrifyAuth() {
-    
-    
-
+async function verrifyAuth(user_id) {
+    authToken=""
+    user=""
     if (fs.existsSync('auth.json')) {
         let auth = JSON.parse(fs.readFileSync('auth.json', 'utf-8'));
-        authToken = auth.authToken;
+        //find the user with the matching id
+        for (let i = 0; i < auth.logins.length; i++) {
+            if (auth.logins[i].id == user_id) {
+                console.log('user found');
+                user = auth.logins[i];
+                authToken = auth.logins[i].authToken;
+            }
+        }
+
         const decoded = jwt.decode(authToken);
         try {
             if (decoded.exp < Date.now() / 1000) {
-                getAuth();
+                const newToken = await getAuth(user.username, user.password);
+                user.authToken = newToken;
+                fs.writeFileSync('auth.json', JSON.stringify(auth, null, 2));
                 console.log('token expired');
+                return await newToken;
             }
         } catch (error) {
-            getAuth();
             console.log('token expired');
+            return await getAuth(user.username, user.password);
         }
+        return authToken;
 
     }
 }
 
-verrifyAuth();
-let tournament_id=''
-let scoreboard = '' 
-let teamScoreboardMetadata = ''
-async function getAuth(){
+async function getAuth(username, password){
 
     const url = 'https://www.zleague.gg/v2/login';
 
-    const data = "username=Kieran%40bendell.ca&password=Sova-never1";
+    const data = `username=${username}&password=${password}`;
 
     const response = await fetch(url, {
         method: 'POST',
@@ -56,165 +62,19 @@ async function getAuth(){
         body: data,
     });
     authToken = JSON.parse(await response.text()).accessToken;
-    //write to auth.json file
-    fs.writeFileSync('auth.json', JSON.stringify({authToken: authToken}));
+    //open auth.json find the object with a matching username and update the authToken
+    let auth = JSON.parse(fs.readFileSync('auth.json', 'utf-8'));
+    for (let i = 0; i < auth.length; i++) {
+        if (auth[i].username == username) {
+            auth[i].authToken = authToken;
+        }
+    }
+    fs.writeFileSync('auth.json', JSON.stringify(auth, null, 2));
     console.log(authToken);
+    return authToken;
 }
 
-async function test_register(game, amount){
-    verrifyAuth();
-    const url = 'https://www.zleague.gg/v2/play-now/team/register';
-    // let data_body = 
-
-    let apex_body=`{
-        "details": {
-          "entryFee": ${amount},
-          "entryFeeType": "CASH",
-          "game": "APEX_LEGENDS",
-          "prizeType": "USD",
-          "teamName": "YouKnowMe",
-          "scoringFormat": "APEX_STANDARD"
-        },
-        "playerMetadata": {
-          "clientType": "MOBILE",
-          "game": "APEX_LEGENDS"
-        }
-      }`
-    let chess_body=`{
-        "details": {
-          "entryFee": ${amount},
-          "entryFeeType": "CREDIT",
-          "game": "CHESS_DOT_COM",
-          "prizeType": "CREDIT",
-          "teamName": "YouKnowMe",
-          "scoringFormat": "CHESS_BULLET_SEVEN"
-        },
-        "playerMetadata": {
-          "clientType": "MOBILE",
-          "game": "CHESS_DOT_COM"
-        }
-      }`
-    let body = game == 'apex' ? apex_body : chess_body;
-    const response = await fetch(url, {
-        headers: {
-            'Authorization': 'Bearer ' + authToken,
-            'Content-Type': 'application/json',
-        },
-        method: 'POST',
-        body: body,
-    });
-    res = JSON.parse(await response.text());
-    console.log(res);
-    let team_id = res.teamId;
-    let Tournament_id = res.tournamentId;
-    await test_pay_team(team_id,10,0);
-    skip = game == 'apex' ? await test_legend_select(team_id, Tournament_id,) : "";
-    await test_start_tournament(team_id, Tournament_id);
-}
-
-async function test_pay_team(team_id, amount=0, creditAmount=0){
-    verrifyAuth();
-    const url = 'https://www.zleague.gg/v2/wallet/wallet-transaction';
-    const response = await fetch(url, {
-        headers: {
-            'Authorization': 'Bearer ' + authToken,
-            'Content-Type': 'application/json',
-        },
-        method: 'POST',
-        body: `{"teamId":"${team_id}","cashAmount":${amount},"creditAmount":${creditAmount}}`,
-    });
-    res = await response.text();
-    console.log(JSON.parse(res));
-    
-}
-
-async function test_legend_select(team_id, tournament_id){
-    verrifyAuth();
-    const url = 'https://www.zleague.gg/v2/tournament/player/change-legend';
-    var player_id = await fetchInfo('/account/upcoming-teams')
-    console.log(`{"teamId":"${team_id}","tournamentId":"${tournament_id}","newLegend":"Pathfinder","playerId":"${player_id.teams[0].teammates[0].id}"}`)
-    const response = await fetch(url, {
-        headers: {
-            'Authorization': 'Bearer ' + authToken,
-            'Content-Type': 'application/json',
-        },
-        method: 'POST',
-        body: `{"teamId":"${team_id}","tournamentId":"${tournament_id}","newLegend":"Loba","playerId":"${player_id.teams[0].teammates[0].id}"}`,
-    });
-    res = await response.text();
-    console.log(JSON.parse(res));
-}
-
-async function test_start_tournament(team_id, tournament_id){
-    verrifyAuth();
-    const url = 'https://www.zleague.gg/v2/play-now/competitors-search';
-    const response = await fetch(url, {
-        headers: {
-            'Authorization': 'Bearer ' + authToken,
-            'Content-Type': 'application/json',
-        },
-        method: 'POST',
-        body: `{"tournamentId":"${tournament_id}","teamId":"${team_id}"}`,
-    });
-    res = await response.text();
-    console.log(res)
-}
-
-// test_register("apex", 1);
-
-app.get('/register/:game/:amount', async (req, res) => {
-    game = req.params.game;
-    amount = req.params.amount;
-    test_register(game, amount);
-    res.send('registered');
-});
-
-async function minigame_start(){
-    verrifyAuth();
-    // post request to /arcade/game/start
-    const url = 'https://www.zleague.gg/v2/arcade/game/start';
-    const response = await fetch(url, {
-        headers: {
-            'Authorization': 'Bearer ' + authToken,
-            'Content-Type': 'application/json',
-        },
-        method: 'POST',
-        body: `{"game":"BRICK_BREAK","entryFeeAmount":20,"entryFeeType":"CREDIT","prizeType":"CREDIT"}`,
-    });
-    res = JSON.parse(await response.text());
-    //get epoch time
-    let start_time = Date.now();
-    console.log(res,start_time);
-    minigame_end(res,start_time)
-
-}
-
-//4ab9a6a7-463e-41e1-91b9-50b6f038c9a4
-//d7d12e2b-b348-4b89-bf12-b169e551f8d1
-
-async function minigame_end(sesh_id,start_time){
-    verrifyAuth();
-    // post request to /arcade/game/end
-    const url = 'https://www.zleague.gg/v2/arcade/game/submit-result'
-    body = `{"id":"${sesh_id}","game":"BRICK_BREAK","score":100,"entryFeeAmount":20,"entryFeeType":"CREDIT","startTimestamp":${start_time},"endTimestamp":${Date.now()},"prizeAmount":20,"prizeType":"CREDIT","awardChestAsync":false,"hash":""}`;
-    const response = await fetch(url, {
-        headers: {
-            'Authorization': 'Bearer ' + authToken,
-            'Content-Type': 'application/json',
-        },
-        method: 'POST',
-        body: body,
-    });
-    res = JSON.parse(await response.text());
-    console.log(res);
-}
-// minigame_start();
-
-
-
-
-async function makeApiRequests() {
-    verrifyAuth();
+async function makeApiRequests(authToken) {
     const url = 'https://www.zleague.gg/v2/account/upcoming-teams';
 
     const response = await fetch(url, {
@@ -226,21 +86,19 @@ async function makeApiRequests() {
     const res = JSON.parse(await response.text());
     try{
         if(res.teams.length ==0){
-            console.log('not in a tournament');
-            return
+            // console.log('not in a tournament');
+            return {"scoreboard":NAN, "teamScoreboardMetadata":NAN};
         }
     } catch (error) {
-        console.log('not in a tournament');
-        return
+        // console.log('not in a tournament');
+        return {"scoreboard":"", "teamScoreboardMetadata":""};
     }
     tournament_id = res.teams[0].event.id;
-    console.log(res.teams[0]);
-    await showTournamentDetails();
-    return
+    
+    return await showTournamentDetails(tournament_id,authToken);
 }
 
-async function showTournamentDetails() {
-    verrifyAuth();
+async function showTournamentDetails(tournament_id, authToken) {
     const url = 'https://www.zleague.gg/v2/play-now/scoreboard/'+tournament_id;
 
     const response = await fetch(url, {
@@ -252,12 +110,15 @@ async function showTournamentDetails() {
     const text = JSON.parse(await response.text());
     scoreboard = text.scoreboard;
     teamScoreboardMetadata = text.teamScoreboardMetadata;
-    console.log(teamScoreboardMetadata)
+    return {"scoreboard":scoreboard, "teamScoreboardMetadata":teamScoreboardMetadata};
 }
-app.get('/tournament', async (req, res) => {
-    verrifyAuth();
-    await makeApiRequests();
-    const teams = scoreboard;
+
+app.get('/tournament/:id', async (req, res) => {
+    id = req.params.id;
+    auth = await verrifyAuth(id);
+    const data = await makeApiRequests(auth);
+    const teams = await data.scoreboard;
+    const teamScoreboardMetadata = data.teamScoreboardMetadata;
     
     let html = `
         <!DOCTYPE html>
@@ -388,7 +249,7 @@ app.get('/tournament', async (req, res) => {
     res.send(html);
 
 });
-async function fetchInfo(url) {
+async function fetchInfo(url, authToken) {
     base_url = 'https://www.zleague.gg/v2'+url;
     const response = await fetch(base_url, {
         headers: {
@@ -397,21 +258,56 @@ async function fetchInfo(url) {
     });
     // res = JSON.parse(await response.text());
     res = await response.text();
+    return JSON.parse(res);
+}
+
+async function PostInfo(url,data, authToken) {
+    const base_url = 'https://www.zleague.gg/v2' + url;
+
+    const body = `${data}`;
+
+    const response = await fetch(base_url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + authToken,
+        },
+        body: body,
+    });
+    // res = JSON.parse(await response.text());
+    res = await response.text();
     console.log(res);
     return JSON.parse(res);
 }
 
 
-app.get('/account', async (req, res) => {
-    verrifyAuth();
+app.get('/account/:id', async (req, res) => {
+    id = req.params.id;
+
+    const auth = await verrifyAuth(id);
+    // PostInfo('/wallet/initiate-withdraw', auth);
+    const account = await fetchInfo('/account', auth);
     // console.log(await fetchInfo('/profile?username=Edgelord69420'));
 
     // fetchInfo('/play-now/team/register')
-
+    const winnings = await fetchInfo('/wallet/cash-transactions', auth);
+    let total_winnings = 0; 
+    for (let i = 0; i < winnings.length; i++) {
+        if(winnings[i].reasonType == 'PAYMENT'){
+            total_winnings += winnings[i].cashAmount;
+        }
+    }
+    const credit_winnings = await fetchInfo('/account/credit-transactions', auth);
+    let Tcredit_winnings = 0; 
+    for (let i = 0; i < credit_winnings.length; i++) {
+        if(credit_winnings[i].transactionType == 'ADDED'){
+            // console.log(credit_winnings[i]);
+            Tcredit_winnings += credit_winnings[i].amount;
+        }
+    }
     // Get account details from /account endpoint and /payments/balances endpoint
-    const account = await fetchInfo('/account');
-    console.log(account);
-    const balances = await fetchInfo('/payments/balances');
+    
+    const balances = await fetchInfo('/payments/balances', auth);
     // Extract necessary information from the response
     const credits = account.creditBalance;
     const username = account.userName;
@@ -419,7 +315,6 @@ app.get('/account', async (req, res) => {
     const non_withdrawable = balances.nonwithdrawableBalance;
     const withdrawable = balances.withdrawableBalance;
     const verified = account.identityVerificationStatus;
-    const id = account.id;
 
     // Generate HTML with the account information
     let html = `
@@ -485,6 +380,72 @@ app.get('/account', async (req, res) => {
             .account-info p strong {
                 font-size: 22px;
             }
+
+            .modal {
+                display: none; /* Hidden by default */
+                position: fixed; /* Fixed position */
+                z-index: 1; /* Make sure it appears on top */
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                overflow: auto; /* Enable scrolling if needed */
+                background-color: rgba(0, 0, 0, 0.5); /* Black with opacity */
+            }
+    
+            .modal-content {
+                background-color: #333;
+                margin: 15% auto;
+                padding: 20px;
+                border: 1px solid #888;
+                width: 50%;
+                border-radius: 10px;
+            }
+    
+            .close {
+                color: #aaa;
+                float: right;
+                font-size: 28px;
+                font-weight: bold;
+            }
+    
+            .close:hover,
+            .close:focus {
+                color: #fff;
+                text-decoration: none;
+                cursor: pointer;
+            }
+    
+            /* Form Styles */
+            form {
+                display: flex;
+                flex-direction: column;
+            }
+    
+            label {
+                margin-bottom: 10px;
+            }
+    
+            input[type="text"] {
+                padding: 8px;
+                margin-bottom: 10px;
+                border-radius: 5px;
+                border: 1px solid #aaa;
+            }
+    
+            button[type="submit"] {
+                padding: 10px 20px;
+                border: none;
+                border-radius: 5px;
+                background-color: #2c3e50;
+                color: #fff;
+                cursor: pointer;
+            }
+    
+            button[type="submit"]:hover {
+                background-color: #34495e;
+            }
+
         </style>
     </head>
     <body>
@@ -493,27 +454,132 @@ app.get('/account', async (req, res) => {
             <div class="account-info">
                 <p><strong>Username:</strong> ${username}</p>
                 <p><strong>ID:</strong> ${id}</p>
+                <p><strong>Total Cash Withdrawn:</strong> ${total_winnings}</p>
+                <p><strong>Total Credits Won:</strong> ${Tcredit_winnings}</p>
                 <p><strong>Credits:</strong> ${credits}</p>
                 <p><strong>Cash:</strong> ${cash}</p>
                 <p><strong>Non-withdrawable Balance:</strong> ${non_withdrawable}</p>
-                <p><strong>Withdrawable Balance:</strong> ${withdrawable} <a class="zleague-button" href="https://www.zleague.gg/apex/my-profile?tab=transactions&game=apex" target=blank>Withdraw Funds</a></p>
+                <p><strong>Withdrawable Balance:</strong> ${withdrawable}  <button class="zleague-button" onclick="openWithdrawModal()">Withdraw Funds</button></p>
                 <p><strong>Verified:</strong> ${verified ? 'Yes' : 'No'}</p>
             </div>
         </div>
-    </body>
-    </html>
+    
+        <!-- Withdraw Modal -->
+        <div id="withdrawModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeWithdrawModal()">&times;</span>
+                <h2>Withdraw Funds</h2>
+                <form id="withdrawForm">
+                    <label for="amount">Amount:<a style="float:right;color:rgb(31, 226, 37);"> Available: ${withdrawable}</a></label> 
+                    <input type="text" id="amount" name="amount" required>
+                    <button type="submit">Submit</button>
+                </form>
+            </div>
+        </div>
+
+        <script>
+            // Get the modal
+            var modal = document.getElementById('withdrawModal');
+
+            // When the user clicks on the button, open the modal
+            function openWithdrawModal() {
+                modal.style.display = 'block';
+            }
+
+            // When the user clicks on <span> (x), close the modal
+            function closeWithdrawModal() {
+                modal.style.display = 'none';
+            }
+
+            // When the user clicks anywhere outside of the modal, close it
+            window.onclick = function(event) {
+                if (event.target == modal) {
+                    closeWithdrawModal();
+                }
+            }
+
+            // Submit form function can be added to send the withdrawal request to the server
+            document.getElementById('withdrawForm').addEventListener('submit', async function(event) {
+                event.preventDefault();
+                var amount = document.getElementById('amount').value;
+                const maxWithdraw = ${withdrawable};
+                if (amount > maxWithdraw) {
+                    alert('Insufficient funds');
+                    return;
+                }
+
+                //post to the server /withdraw
+                const response = await fetch('/withdraw?amount='+ amount)
+
+                if (await response.ok) {
+                    alert('Withdrawal request submitted');
+                    closeWithdrawModal();
+                } else {
+                    alert('Error submitting withdrawal request');
+                }
+            });
+            window.onload = function() {
+                closeWithdrawModal()
+            }
+        </script>
+        </body>
+        </html>
     `;
 
     res.send(html);
 });
 
+app.get('/login', async (req, res) => {
+    console.log('logging in')
+    const username = req.query.email;
+    const password = req.query.password;
+    const auth = await getAuth(username, password);
+    const account = await fetchInfo('/account', auth);
+    const login_id = await account.id;
 
-/*
-res.userName
-res.creditBalance
-res.cashBalance
-*/ 
+    const data = {
+        "login": "true",
+        "username": username,
+        "password": password,
+        "id": login_id,
+        "authToken": auth
+    }
+    //write to auth.json file with data and make it look pretty
+    //append the new data to the file
+    //check if the user is already in the file
+    opend_file = JSON.parse(fs.readFileSync('auth.json', 'utf-8'));
+    for (let i = 0; i < opend_file.logins.length; i++) {
+        if (opend_file.logins[i].id === login_id) {
+            await verrifyAuth(login_id);
+            res.send({ "login": "true", "username": username, "id": login_id});
+            return;
+        }
+    }
+    opend_file.logins.push(data);
+    fs.writeFileSync('auth.json', JSON.stringify(opend_file, null, 2));
+    res.send({ "login": "true", "username": username, "id": `${login_id}`});
+});
 
+app.get('/withdraw', async (req, res) => {
+    const amount = req.query.amount;
+    const id = req.headers.cookie.split(':')[2];
+    const body = `{"amount":${amount}}`;
+    console.log(amount, id);
+    const auth = await verrifyAuth(id);
+    const response = await PostInfo('/wallet/initiate-withdraw',body, auth);
+    response.amount = amount;
+    const withdraw = await PostInfo('/wallet/withdraw',JSON.stringify(response), auth);
+    res.send(withdraw);
+});
+
+app.get('*', (req, res) => {
+    console.log(req.url);
+    res.send('Route not found');
+})
+app.post('*', (req, res) => {
+    console.log(req.url);
+    res.status(404).send('Route not found');
+})
 app.listen(port, () => {
     console.log(`Server is listening on port ${port} \n-> http://service.strmlight.com`);
 });

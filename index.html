@@ -17,7 +17,7 @@
         /* Add your zleague styles here */
         .zleague-button {
             background-color: #2c3e50;
-            color: #fff;
+            color: #ffffff;
             padding: 10px 20px;
             border: none;
             border-radius: 5px;
@@ -27,7 +27,6 @@
             display: block; /* Ensure block-level element behavior */
         }
 
-
         .zleague-button:hover {
             background-color: #34495e;
         }
@@ -35,59 +34,48 @@
         /* Style for container to display iframes side by side */
         .iframe-container {
             display: flex;
-            justify-content: space-between;
+            flex-wrap: wrap; /* Allow elements to wrap */
+            justify-content: flex-start; /* Align items at the start */
+            align-items: flex-start; /* Align items at the start */
             padding: 20px; /* Add padding to the container */
         }
 
         /* Style for each iframe */
         .iframe-container iframe {
-            width: 48%; /* Adjust as needed */
+            width: calc(50% - 10px); /* Adjust as needed */
             height: 500px;
             border: 2px solid #fff; /* White outline */
             border-radius: 5px;
             box-shadow: white 0 0 10px; /* Darker glow effect */
+            margin-bottom: 20px; /* Add space between iframes */
+            height: calc(100vh - 40px); /* 100% viewport height minus top and bottom padding */
         }
 
-        /* Style for the form container */
-        .form-container {
-            width: 30%;
-            margin-top: 20px;
+        /* Popup styles */
+        .popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .popup-content {
+            background-color: #333;
             padding: 20px;
-            border: 2px solid #fff; /* White outline */
             border-radius: 5px;
-            box-shadow: white 0 0 10px; /* Darker glow effect */
         }
 
-        /* Style for form fields */
-        .form-container input[type="text"],
-        .form-container input[type="number"],
-        .form-container input[type="date"],
-        .form-container input[type="submit"],
-        .form-container textarea {
-            width: calc(100% - 10px);
-            margin-bottom: 10px;
-            padding: 5px;
-            border-radius: 3px;
-            border: 1px solid #ccc;
-        }
-
-        /* Style for form submit button */
-        .form-container input[type="submit"] {
-            background-color: #2c3e50;
-            color: #fff;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
             cursor: pointer;
-        }
-
-        .form-container input[type="submit"]:hover {
-            background-color: #34495e;
-        }
-
-        .forms{
-            display: flex;
-            justify-content: space-evenly;
         }
     </style>
 </head>
@@ -96,72 +84,70 @@
         <iframe src="/tournament"></iframe>
         <iframe src="/account"></iframe>
     </div>
-    <!-- a button that hits /register/apex/10 -->
-    <!-- <button class="zleague-button" onclick="fetch('/register/apex/10')">Register for Apex Legends 10$</button>
 
-    <div class="forms">
-        <div class="form-container" style="float: left;">
-            <h2>Register Form</h2>
-            <form id="registerForm" action="/register" method="POST">
-                <label for="legend">Legend:</label><br>
-                <input type="text" id="legend" name="legend" required><br>
-                <label for="amount">Amount:</label><br>
-                <input type="text" id="amount" name="amount" required><br>
-                <label for="paymentMethod">Credit / Cash:</label><br>
-                <select id="paymentMethod" name="paymentMethod" required>
-                    <option value="credit">Credit</option>
-                    <option value="cash">Cash</option>
-                </select><br><br>
+    <div class="popup" id="popup">
+        <div class="popup-content">
+            <span class="close" onclick="closePopup()">&times;</span>
+            <h2>Please enter your ZLeague credentials</h2>
+            <form id="loginForm">
+                <label for="email">Email:</label><br>
+                <input type="email" id="email" name="email" required><br>
+                <label for="password">Password:</label><br>
+                <input type="password" id="password" name="password" required><br><br>
                 <input type="submit" value="Submit">
             </form>
         </div>
-
-        <div class="form-container" style="float: right;">
-            <h2>Credit Card Form</h2>
-            <form id="creditCardForm">
-                <label for="creditCardNumber">Credit Card Number:</label><br>
-                <input type="text" id="creditCardNumber" name="creditCardNumber" required><br>
-                <label for="expirationDate">Expiration Date:</label><br>
-                <input type="date" id="expirationDate" name="expirationDate" required><br>
-                <label for="cvv">CVV:</label><br>
-                <input type="text" id="cvv" name="cvv" required><br>
-                <label for="address">Address:</label><br>
-                <textarea id="address" name="address" required></textarea><br><br>
-                <input type="submit" value="Submit">
-            </form>
-        </div>
-    </div> -->
+    </div>
 
     <script>
-        // JavaScript code to handle form submission for credit card form
-        document.getElementById("creditCardForm").addEventListener("submit", function(event) {
-            event.preventDefault();
-            var form = event.target;
-            var formData = new FormData(form);
-            var requestBody = {};
-            formData.forEach(function(value, key) {
-                requestBody[key] = value;
-            });
-            fetch("/process_credit_card", {
-                method: "POST",
-                body: JSON.stringify(requestBody),
-                headers: {
-                    "Content-Type": "application/json"
-                }
-            })
-            .then(response => {
-                if (response.ok) {
-                    console.log("Payment successful!");
-                    // You can add further actions here like displaying a success message or redirecting
-                } else {
-                    console.error("Payment failed!");
-                    // You can add further actions here like displaying an error message
-                }
-            })
-            .catch(error => {
-                console.error("Error occurred during payment:", error);
-                // You can add further actions here like displaying an error message
-            });
+        // Function to check if cookie exists
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+
+        // Function to close the popup
+        function closePopup() {
+            document.getElementById('popup').style.display = 'none';
+        }
+
+        window.onload = function () {
+            const zleagueCookie = getCookie('zleague_credentials');
+            console.log(zleagueCookie)
+            //set the iframes to the user's id
+            if (!zleagueCookie) {
+                document.getElementById('popup').style.display = 'flex';
+            }
+            for (let iframe of document.querySelectorAll('iframe')) {
+                iframe.src = iframe.src + `/${zleagueCookie.split(':')[2]}`;
+            }
+        };
+
+        async function load_data(data){
+            console.log(data.login)
+        }
+
+        // Function to handle form submission
+        document.getElementById('loginForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            // Save email and password to a cookie
+            
+            // Send GET request to the server with email and password
+            response = await fetch(`/login?email=${email}&password=${password}`)
+            data = await response.json()
+            console.log(data)
+            
+            
+            document.cookie = `zleague_credentials=${email}:${password}:${data.id}; expires=Fri, 31 Dec 9999 23:59:59 GMT`;
+            if(response.ok){
+                closePopup();
+                location.reload();
+            }
+            
         });
     </script>
 </body>
