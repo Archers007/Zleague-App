@@ -176,6 +176,156 @@ app.get('/tournament/:id', async (req, res) => {
                     font-size: 50px;
                     text-shadow: 2px 2px 4px #000000;
                 }
+                .btn {
+                    text-align: center;
+                    padding-top: 25%;
+                }
+                .zleague-button {
+                    background-color: #2c3e50;
+                    color: #fff;
+                    padding: 10px 20px;
+                    border: none;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* subtle glow effect */
+                    margin-left: 10px;
+                    transition: background-color 0.3s;
+                }
+                .zleague-button:hover {
+                    background-color: #34495e;
+                }
+                .modal {
+                    display: none; /* Hidden by default */
+                    position: fixed; /* Fixed position */
+                    z-index: 1; /* Make sure it appears on top */
+                    left: 0;
+                    top: 0;
+                    width: 100%;
+                    height: 100%;
+                    overflow: auto; /* Enable scrolling if needed */
+                    background-color: rgba(0, 0, 0, 0.5); /* Black with opacity */
+                }
+        
+                .modal-content {
+                    background-color: #333;
+                    margin: 15% auto;
+                    padding: 20px;
+                    border: 1px solid #888;
+                    width: 50%;
+                    border-radius: 10px;
+                }
+        
+                .close {
+                    color: #aaa;
+                    float: right;
+                    font-size: 28px;
+                    font-weight: bold;
+                }
+        
+                .close:hover,
+                .close:focus {
+                    color: #fff;
+                    text-decoration: none;
+                    cursor: pointer;
+                }
+        
+                /* Form Styles */
+                form {
+                    display: flex;
+                    flex-direction: column;
+                }
+        
+                label {
+                    margin-bottom: 10px;
+                }
+        
+                input[type="text"],
+                select {
+                    width: 150px; /* Adjust width of inputs */
+                    padding: 5px; /* Adjust padding */
+                    border-radius: 5px; /* Add border radius */
+                    border: 1px solid #aaa; /* Add border */
+                }
+
+                /* Optionally, you can style the select element to match input */
+                select {
+                    appearance: none; /* Remove default select styles */
+                    -webkit-appearance: none; /* For Safari */
+                    -moz-appearance: none; /* For Firefox */
+                    background-image: url('data:image/svg+xml;utf8,<svg fill="%23444" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5H7z"/></svg>'); /* Add custom arrow */
+                    background-repeat: no-repeat; /* Prevent arrow duplication */
+                    background-position-x: 95%; /* Position the arrow */
+                    background-position-y: center; /* Center vertically */
+                    background-color: #fff; /* Background color */
+                    cursor: pointer; /* Change cursor on hover */
+                }
+        
+                button[type="submit"] {
+                    padding: 10px 20px;
+                    border: none;
+                    border-radius: 5px;
+                    background-color: #2c3e50;
+                    color: #fff;
+                    cursor: pointer;
+                }
+        
+                button[type="submit"]:hover {
+                    background-color: #34495e;
+                }
+
+                input[type="radio"] {
+                    display: none; /* Hide the actual radio button */
+                }
+            
+                /* Custom Radio Button Styles */
+                .radio-container {
+                    display: inline-block;
+                    position: relative;
+                    padding-left: 30px;
+                    margin-right: 15px;
+                    cursor: pointer;
+                }
+            
+                .radio-container input[type="radio"] + .radio-custom {
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    bottom: 0;
+                    width: 20px;
+                    height: 20px;
+                    border: 1px solid #aaa;
+                    border-radius: 50%;
+                    background-color: transparent;
+                    transition: background-color 0.3s, border-color 0.3s;
+                }
+            
+                .radio-container input[type="radio"]:checked + .radio-custom {
+                    background-color: #2c3e50; /* Change background color when radio is checked */
+                    border-color: #2c3e50; /* Change border color when radio is checked */
+                }
+            
+                .radio-custom:after {
+                    content: "";
+                    display: block;
+                    width: 12px;
+                    height: 12px;
+                    margin: 3px;
+                    border-radius: 50%;
+                    background: white;
+                    transition: transform 0.3s;
+                    transform: scale(0); /* Initially hidden */
+                }
+            
+                .radio-container input[type="radio"]:checked + .radio-custom:after {
+                    transform: scale(1); /* Show the checkmark when radio is checked */
+                }
+            
+                /* Label Styles */
+                .radio-label {
+                    margin-left: 5px;
+                    vertical-align: middle;
+                }
+            
             </style>
         </head>
         <body>
@@ -236,7 +386,95 @@ app.get('/tournament/:id', async (req, res) => {
         `;
     } else {
         html += `
-                <h2 class="NA">Not in a tournament</h2>
+            <h2 class="NA">Not in a tournament</h2>
+            <div class="btn">
+                <a onclick="openSignUpModal()" class="zleague-button">Sign Up</a>
+            </div>
+            <div id="signUpModal" style="display:none;" class="modal">
+                <div class="modal-content">
+                    <a class="close" onclick="closeSignUpModal()">X</a>
+                    <h2 style="text-align:center;">Sign Up</h2>
+                    <form id="signUpForm" action="/Apex-Sign-Up">
+                    <div style="display:flex;justify-content:space-evenly;">
+                        <label class="radio-container" for="c">Cash
+                            <input type="radio" id="c" name="cc" value="CASH">
+                            <span class="radio-custom"></span>
+                        </label>
+                        <label class="radio-container" for="cc">Credit
+                            <input type="radio" id="cc" name="cc" value="CREDIT">
+                            <span class="radio-custom"></span>
+                        </label>
+                    </div>
+                   
+                    <div style="display: flex; justify-content: space-between; text-align:center;">
+                        <div>
+                            <label for="legend">Legend:</label>
+                            <select id="legend" name="legend" required>
+                                <!-- Legends will be populated here dynamically -->
+                            </select>
+                        </div>
+                        <div>
+                            <label for="amount">Amount:</label>
+                            <input type="text" id="amount" name="amount" required>
+                        </div>
+                    </div>
+                    <space style="margin-bottom: 10px;"></space>
+                    <button type="submit">Submit</button>
+                    </form>
+                </div>
+            </div>
+            <script>
+                            // Define an array of legends
+                const legends = [
+                    "Ash",
+                    "Ballistic",
+                    "Bangalore",
+                    "Bloodhound",
+                    "Catalyst",
+                    "Caustic",
+                    "Conduit",
+                    "Crypto",
+                    "Fuse",
+                    "Gibraltar",
+                    "Horizon",
+                    "Lifeline",
+                    "Loba",
+                    "Mad Maggie",
+                    "Mirage",
+                    "Newcastle",
+                    "Octane",
+                    "Pathfinder",
+                    "Rampart",
+                    "Revenant",
+                    "Seer",
+                    "Valkyrie",
+                    "Vantage",
+                    "Wattson",
+                    "Wraith",
+                ];
+
+                // Populate the select element with options for each legend
+                const legendSelect = document.getElementById('legend');
+                legends.forEach(legend => {
+                    const option = document.createElement('option');
+                    option.value = legend;
+                    option.textContent = legend;
+                    legendSelect.appendChild(option);
+                });
+            </script>
+
+            <script>
+                var modal = document.getElementById('signUpModal');
+                function openSignUpModal() {
+                    modal.style.display = 'block';
+                }
+                function closeSignUpModal() {
+                    modal.style.display = 'none';
+                }
+                window.onload = function() {
+                    closeSignUpModal()
+                }
+            </script>
         `;
     }
 
@@ -247,8 +485,14 @@ app.get('/tournament/:id', async (req, res) => {
     `;
 
     res.send(html);
-
 });
+
+// // JavaScript function to open sign up form
+// function openSignUpForm() {
+//     window.open('/register?game=Apex&cc=CASH&amount=10&legend=Pathfinder', '_blank');
+// }
+
+
 async function fetchInfo(url, authToken) {
     base_url = 'https://www.zleague.gg/v2'+url;
     const response = await fetch(base_url, {
@@ -454,7 +698,7 @@ app.get('/account/:id', async (req, res) => {
             <div class="account-info">
                 <p><strong>Username:</strong> ${username}</p>
                 <p><strong>ID:</strong> ${id}</p>
-                <p><strong>Total Cash Withdrawn:</strong> ${total_winnings}</p>
+                <p><strong>Total Cash Withdrawn:</strong> ${total_winnings} USD</p>
                 <p><strong>Total Credits Won:</strong> ${Tcredit_winnings}</p>
                 <p><strong>Credits:</strong> ${credits}</p>
                 <p><strong>Cash:</strong> ${cash}</p>
@@ -564,17 +808,105 @@ app.get('/withdraw', async (req, res) => {
     const amount = req.query.amount;
     const id = req.headers.cookie.split(':')[2];
     const body = `{"amount":${amount}}`;
-    console.log(amount, id);
     const auth = await verrifyAuth(id);
     const response = await PostInfo('/wallet/initiate-withdraw',body, auth);
-    response.amount = amount;
-    const withdraw = await PostInfo('/wallet/withdraw',JSON.stringify(response), auth);
-    res.send(withdraw);
+    if(response.paypalPayoutId){
+        response.amount = amount;
+        const withdraw = await PostInfo('/wallet/withdraw',JSON.stringify(response), auth);
+        res.send(withdraw);
+        return;
+    }
+    res.send(response);
+});
+
+async function register(data, authToken){
+    let apex_cash=`{
+        "details": {
+          "entryFee": ${data.amount},
+          "entryFeeType": "CASH",
+          "game": "APEX_LEGENDS",
+          "prizeType": "USD",
+          "teamName": "YouKnowMe",
+          "scoringFormat": "APEX_STANDARD"
+        },
+        "playerMetadata": {
+          "clientType": "MOBILE",
+          "game": "APEX_LEGENDS"
+        }
+      }`
+    let apex_credit=`{
+        "details": {
+          "entryFee": ${data.amount},
+          "entryFeeType": "CREDIT",
+          "game": "APEX_LEGENDS",
+          "prizeType": "CREDIT",
+          "teamName": "YouKnowMe",
+          "scoringFormat": "APEX_STANDARD"
+        },
+        "playerMetadata": {
+          "clientType": "MOBILE",
+          "game": "APEX_LEGENDS"
+        }
+      }`
+
+    let body = data.cc == 'CASH' ? apex_cash : apex_credit;
+
+    res = await PostInfo('/play-now/team/register', body, authToken);
+    console.log(res);
+    let team_id = res.teamId;
+    let Tournament_id = res.tournamentId;
+    await pay_team(team_id,data,authToken);
+    await legend_select(team_id, Tournament_id, data, authToken);
+
+    await start_tournament(team_id, Tournament_id,authToken);
+}
+
+async function pay_team(team_id, data, authToken){
+    const cash_body = `{"teamId":"${team_id}","cashAmount":${data.amount},"creditAmount":0}`;
+    const credit_body = `{"teamId":"${team_id}","cashAmount":0,"creditAmount":${data.amount}}`;
+    
+    res = await PostInfo('/wallet/wallet-transaction', data.cc == 'CASH' ? cash_body : credit_body, authToken);
+    console.log(res);
+}
+
+async function legend_select(team_id, tournament_id, data, authToken){
+    const url = 'https://www.zleague.gg/v2/tournament/player/change-legend';
+    const legend = data.legend;
+    const player = await fetchInfo('/account/upcoming-teams', authToken);
+    console.log("player",player.teams[0].teammates)
+    const player_id = await player.teams[0].teammates[0].id;
+
+    const body= `{"teamId":"${team_id}","tournamentId":"${tournament_id}","newLegend":"${legend}","playerId":"${player_id}"}`
+
+    res = await PostInfo('/tournament/player/change-legend', body, authToken);
+    console.log(res);
+}
+
+async function start_tournament(team_id, tournament_id,authToken){
+    const url = 'https://www.zleague.gg/v2/play-now/competitors-search';
+    const body= `{"tournamentId":"${tournament_id}","teamId":"${team_id}"}`
+    try {
+        res = await PostInfo('/play-now/competitors-search', body, authToken);
+        console.log(res)
+    } catch (error) {
+        console.log("Tournament has already started")
+    }
+}
+
+app.get('/Apex-Sign-Up', async (req, res) => {
+    console.log(req.query);
+    const id = req.headers.cookie.split(':')[2];
+    const data = req.query;
+    data.player_id = id;
+    const auth = await verrifyAuth(id);
+    await register(data, auth);
+    // const response = await fetchInfo('/play-now/team/register', auth);
+    res.redirect('/tournament/'+id);
 });
 
 app.get('*', (req, res) => {
     console.log(req.url);
-    res.send('Route not found');
+    res.status(404).send('Route not found');
 })
 app.post('*', (req, res) => {
     console.log(req.url);
