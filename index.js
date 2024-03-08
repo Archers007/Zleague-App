@@ -116,6 +116,16 @@ async function showTournamentDetails(tournament_id, authToken) {
 app.get('/tournament/:id', async (req, res) => {
     id = req.params.id;
     auth = await verrifyAuth(id);
+    const time = await fetchInfo('/account/upcoming-teams', auth);
+    if(await time.teams.length > 0){
+        const start_time = await time.teams[0].event.startTime;
+        //make start time readable in minutes left end time is start time + 90 minutes
+        const end_time = new Date(start_time);
+        end_time.setMinutes(end_time.getMinutes() + 90);
+        //subtratc the current time from the end time to get the minutes left
+        const current_time = new Date();
+        minutes_left = Math.floor((end_time - current_time) / 60000);
+    }
     const data = await makeApiRequests(auth);
     const teams = await data.scoreboard;
     const teamScoreboardMetadata = data.teamScoreboardMetadata;
@@ -175,6 +185,9 @@ app.get('/tournament/:id', async (req, res) => {
                     font-family: Arial, sans-serif;
                     font-size: 50px;
                     text-shadow: 2px 2px 4px #000000;
+                }
+                h2 {
+                    text-align: center;
                 }
                 .btn {
                     text-align: center;
@@ -327,6 +340,13 @@ app.get('/tournament/:id', async (req, res) => {
                 }
             
             </style>
+            <script>
+                window.onload = function() {
+                    setInterval(function() {
+                        location.reload();
+                    }, 60000); // Refresh the page every 30 seconds
+                }
+            </script>
         </head>
         <body>
             <div class="container">
@@ -335,6 +355,7 @@ app.get('/tournament/:id', async (req, res) => {
             if (teams && teams.length > 0) {
                 html += `
                 <h1>Tournament Standings, Current Placement ${teamScoreboardMetadata.place}</h1>
+                <h2>Minutes Left: ${minutes_left}</h2>
                 <table>
                     <thead>
                         <tr>
@@ -758,6 +779,7 @@ app.get('/account/:id', async (req, res) => {
                 if (await response.ok) {
                     alert('Withdrawal request submitted');
                     closeWithdrawModal();
+                    window.location.reload();
                 } else {
                     alert('Error submitting withdrawal request');
                 }
