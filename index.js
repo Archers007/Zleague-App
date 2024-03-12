@@ -74,30 +74,6 @@ async function getAuth(username, password){
     return authToken;
 }
 
-async function makeApiRequests(authToken) {
-    const url = 'https://www.zleague.gg/v2/account/upcoming-teams';
-
-    const response = await fetch(url, {
-        headers: {
-            'Authorization': 'Bearer ' + authToken,
-        }
-    });
-
-    const res = JSON.parse(await response.text());
-    try{
-        if(res.teams.length ==0){
-            // console.log('not in a tournament');
-            return {"scoreboard":NAN, "teamScoreboardMetadata":NAN};
-        }
-    } catch (error) {
-        // console.log('not in a tournament');
-        return {"scoreboard":"", "teamScoreboardMetadata":""};
-    }
-    tournament_id = res.teams[0].event.id;
-    
-    return await showTournamentDetails(tournament_id,authToken);
-}
-
 async function showTournamentDetails(tournament_id, authToken) {
     const url = 'https://www.zleague.gg/v2/play-now/scoreboard/'+tournament_id;
 
@@ -113,23 +89,91 @@ async function showTournamentDetails(tournament_id, authToken) {
     return {"scoreboard":scoreboard, "teamScoreboardMetadata":teamScoreboardMetadata};
 }
 
+async function buildTournament(tournament_id, auth) {
+    const data = await showTournamentDetails(tournament_id.event.id, auth);
+    const teamScoreboardMetadata = data.teamScoreboardMetadata;
+    const teams = data.scoreboard;
+    if (teams == undefined && teamScoreboardMetadata == undefined) {
+        return `
+        <div class="container">
+            <h1>Un Registered Tournament</h1>
+            <a class="cancel" onclick="cancel_tournament('${tournament_id.event.id}')">Cancel?</a>
+            <h2>Not in a tournament</h2>
+        </div>
+        `;
+    }
+    const start_time = tournament_id.event.startTime;
+    //make start time readable in minutes left end time is start time + 90 minutes
+    const end_time = new Date(start_time);
+    end_time.setMinutes(end_time.getMinutes() + 90);
+    //subtratc the current time from the end time to get the minutes left
+    const current_time = new Date();
+    minutes_left = Math.floor((end_time - current_time) / 60000);
+    let html = `
+    <div class="container">
+        <h1>Tournament Standings, Current Placement ${teamScoreboardMetadata.place}</h1>
+        <h2>Minutes Left: ${minutes_left}</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Team Name</th>
+                    <th>Points</th>
+                    <th>Games Played</th>
+                </tr>
+            </thead>
+            <tbody id="standings">
+        `;
+
+    teams.sort((a, b) => b.points - a.points); // Sort teams by points
+    teams.forEach(team => {
+        if (team.teamName === 'YouKnowMe') {
+            net_negative = "background-color: #DD2000;"
+            net_neutral = "background-color: #FFD700;"
+            net_positive = "background-color: #00FF00;"
+            if(teamScoreboardMetadata.place >=6){
+                style = net_negative
+            }
+            if(teamScoreboardMetadata.place <=5){
+                style = net_neutral
+            } 
+            if(teamScoreboardMetadata.place <=2){
+                style = net_positive
+            }
+
+            html += `
+                <tr style="${style}"> <!-- Highlight the user's team -->
+                <td>${team.teamName}</td>
+                <td class="center" >${team.points}</td>
+                <td class="center">${team.gamesPlayed}</td>
+
+            </tr>`
+        } else {
+            html += `
+                <tr>
+                    <td>${team.teamName}</td>
+                    <td class="center">${team.points}</td>
+                    <td class="center">${team.gamesPlayed}</td>
+                </tr>
+            `;
+        }
+    });
+
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+    return html;
+}
+
 app.get('/tournament/:id', async (req, res) => {
     id = req.params.id;
     auth = await verrifyAuth(id);
-    const time = await fetchInfo('/account/upcoming-teams', auth);
-    if(await time.teams.length > 0){
-        const start_time = await time.teams[0].event.startTime;
-        //make start time readable in minutes left end time is start time + 90 minutes
-        const end_time = new Date(start_time);
-        end_time.setMinutes(end_time.getMinutes() + 90);
-        //subtratc the current time from the end time to get the minutes left
-        const current_time = new Date();
-        minutes_left = Math.floor((end_time - current_time) / 60000);
-    }
-    const data = await makeApiRequests(auth);
-    const teams = await data.scoreboard;
-    const teamScoreboardMetadata = data.teamScoreboardMetadata;
-    
+
+    // showTournamentDetails(id,auth)
+    const up_teams = await fetchInfo('/account/upcoming-teams', await auth);
+    console.log(await up_teams.teams);
+    // return;
     let html = `
         <!DOCTYPE html>
         <html lang="en">
@@ -137,6 +181,17 @@ app.get('/tournament/:id', async (req, res) => {
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Tournament Standings</title>
+            <script>
+            async function cancel_tournament(tournament_id) {
+                const response = await fetch('/cancel-tournament?tournament_id=' + tournament_id);
+                if (response.ok) {
+                    alert('Tournament cancelled');
+                    window.location.reload();
+                } else {
+                    alert('Error cancelling tournament');
+                }
+            }
+            </script>
             <style>
                 body {
                     font-family: Arial, sans-serif;
@@ -349,64 +404,20 @@ app.get('/tournament/:id', async (req, res) => {
             </script>
         </head>
         <body>
-            <div class="container">
-            `;
+        `;
+        
+        
+    if (up_teams && up_teams.teams.length>0) {
+        for (let i = 0; i < up_teams.teams.length; i++) {
+            console.log(i)
+            console.log(up_teams.teams[i])
+            html += await buildTournament(up_teams.teams[i],auth);
+        }
             
-            if (teams && teams.length > 0) {
-                html += `
-                <h1>Tournament Standings, Current Placement ${teamScoreboardMetadata.place}</h1>
-                <h2>Minutes Left: ${minutes_left}</h2>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Team Name</th>
-                            <th>Points</th>
-                            <th>Games Played</th>
-                        </tr>
-                    </thead>
-                    <tbody id="standings">
-        `;
-
-        teams.sort((a, b) => b.points - a.points); // Sort teams by points
-        teams.forEach(team => {
-            if (team.teamName === 'YouKnowMe') {
-                net_negative = "background-color: #DD2000;"
-                net_neutral = "background-color: #FFD700;"
-                net_positive = "background-color: #00FF00;"
-                if(teamScoreboardMetadata.place >=6){
-                    style = net_negative
-                }
-                if(teamScoreboardMetadata.place <=5){
-                    style = net_neutral
-                } 
-                if(teamScoreboardMetadata.place <=2){
-                    style = net_positive
-                }
-
-                html += `
-                    <tr style="${style}"> <!-- Highlight the user's team -->
-                    <td>${team.teamName}</td>
-                    <td class="center" >${team.points}</td>
-                    <td class="center">${team.gamesPlayed}</td>
-
-                </tr>`
-            } else {
-                html += `
-                    <tr>
-                        <td>${team.teamName}</td>
-                        <td class="center">${team.points}</td>
-                        <td class="center">${team.gamesPlayed}</td>
-                    </tr>
-                `;
-            }
-        });
-
-        html += `
-                    </tbody>
-                </table>
-        `;
     } else {
         html += `
+            
+
             <h2 class="NA">Not in a tournament</h2>
             <div class="btn">
                 <a onclick="openSignUpModal()" class="zleague-button">Sign Up</a>
@@ -445,6 +456,7 @@ app.get('/tournament/:id', async (req, res) => {
                 </div>
             </div>
             <script>
+                
                             // Define an array of legends
                 const legends = [
                     "Ash",
@@ -485,6 +497,8 @@ app.get('/tournament/:id', async (req, res) => {
             </script>
 
             <script>
+            
+
                 var modal = document.getElementById('signUpModal');
                 function openSignUpModal() {
                     modal.style.display = 'block';
@@ -500,7 +514,6 @@ app.get('/tournament/:id', async (req, res) => {
     }
 
     html += `
-            </div>
         </body>
         </html>
     `;
@@ -924,6 +937,15 @@ app.get('/Apex-Sign-Up', async (req, res) => {
     await register(data, auth);
     // const response = await fetchInfo('/play-now/team/register', auth);
     res.redirect('/tournament/'+id);
+});
+
+app.get('/cancel-tournament', async (req, res) => {
+    const tournament_id = req.query.tournament_id;
+    const id = req.headers.cookie.split(':')[2];
+    const auth = await verrifyAuth(id);
+    const data = `{ "teamId": ${tournament_id}}`
+    const response = await PostInfo('/play-now/team/cancel',data, auth);
+    res.send(response);
 });
 
 app.get('*', (req, res) => {
