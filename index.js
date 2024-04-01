@@ -95,9 +95,13 @@ async function buildTournament(tournament_id, auth) {
     const teams = data.scoreboard;
     if (teams == undefined && teamScoreboardMetadata == undefined) {
         return `
-        <div class="container">
-            <h1>Un Registered Tournament</h1>
-            <a class="cancel" onclick="cancel_tournament('${tournament_id.event.id}')">Cancel?</a>
+        <br>
+        <div class="container incomplete-tournament">
+            <h1>Incomplete Tournament Signup</h1>
+            <div class="btn">
+                <a onclick="cancelAndSignUp('${tournament_id.id}');" class="cancel">Sign Up</a>
+                <a class="cancel" onclick="cancel_tournament('${tournament_id.id}')">Cancel?</a>
+            </div>
             <h2>Not in a tournament</h2>
         </div>
         `;
@@ -161,6 +165,11 @@ async function buildTournament(tournament_id, auth) {
     html += `
                 </tbody>
             </table>
+            <div class="btn" style="padding-top:20px;">
+                <a class="zleague-button" onclick="cancel_tournament('${tournament_id.id}');">Cancel?</a>
+                <a class="zleague-button" onclick="location.reload();">Refresh</a>
+                <a class="zleague-button" onclick="Expanded('${tournament_id.id}');">Expand</a>
+            </div>
         </div>
     `;
     return html;
@@ -172,7 +181,6 @@ app.get('/tournament/:id', async (req, res) => {
 
     // showTournamentDetails(id,auth)
     const up_teams = await fetchInfo('/account/upcoming-teams', await auth);
-    console.log(await up_teams.teams);
     // return;
     let html = `
         <!DOCTYPE html>
@@ -182,16 +190,27 @@ app.get('/tournament/:id', async (req, res) => {
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Tournament Standings</title>
             <script>
+                async function cancelAndSignUp(tournament_id) {
+                    openSignUpModal();
+                    const response = await fetch('/cancel-tournament?tournament_id=' + tournament_id);
+                    if (response.ok) {
+                    } else {
+                        alert('Error cancelling tournament');
+                    }
+                }
+            </script>
+
+            <script>
             async function cancel_tournament(tournament_id) {
                 const response = await fetch('/cancel-tournament?tournament_id=' + tournament_id);
                 if (response.ok) {
-                    alert('Tournament cancelled');
                     window.location.reload();
                 } else {
                     alert('Error cancelling tournament');
                 }
             }
             </script>
+            
             <style>
                 body {
                     font-family: Arial, sans-serif;
@@ -210,6 +229,35 @@ app.get('/tournament/:id', async (req, res) => {
                     border-radius: 5px;
                     // box-shadow: 0 0 10px rgba(255, 255, 255, 0.1); /* Subtle glow effect */
                 }
+
+                .incomplete-tournament {
+                    background-color: #C4C4C4;
+                    width: 75%;
+                    border-radius: 5px;
+                    padding: 20px;
+                    margin: auto; /* Center horizontally */
+                    color: #000; /* Text color */
+                    box-shadow: 0 0 10px rgba(255, 255, 255, 0.2); /* Subtle glow effect */
+                    
+                }
+
+                .incomplete-tournament .btn {
+                    padding-top: 0px;
+                    display: flex;
+                    justify-content: space-between;
+                }
+                
+                .cancel {
+                    text-align: center;
+                    background-color: #2c3e50;
+                    width: 40%;
+                    padding: 10px 20px;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* subtle glow effect */
+                    display: block; /* Make it block-level for margin:auto to work */
+                    color: #fff; /* Text color */
+                }                
 
                 h1 {
                     text-align: center;
@@ -409,20 +457,21 @@ app.get('/tournament/:id', async (req, res) => {
         
     if (up_teams && up_teams.teams.length>0) {
         for (let i = 0; i < up_teams.teams.length; i++) {
-            console.log(i)
-            console.log(up_teams.teams[i])
             html += await buildTournament(up_teams.teams[i],auth);
         }
-            
     } else {
         html += `
-            
 
             <h2 class="NA">Not in a tournament</h2>
             <div class="btn">
                 <a onclick="openSignUpModal()" class="zleague-button">Sign Up</a>
             </div>
-            <div id="signUpModal" style="display:none;" class="modal">
+            
+        `;
+    }
+
+    html += `
+    <div id="signUpModal" style="display:none;" class="modal">
                 <div class="modal-content">
                     <a class="close" onclick="closeSignUpModal()">X</a>
                     <h2 style="text-align:center;">Sign Up</h2>
@@ -495,6 +544,7 @@ app.get('/tournament/:id', async (req, res) => {
                     legendSelect.appendChild(option);
                 });
             </script>
+            
 
             <script>
             
@@ -510,16 +560,13 @@ app.get('/tournament/:id', async (req, res) => {
                     closeSignUpModal()
                 }
             </script>
-        `;
-    }
-
-    html += `
         </body>
         </html>
     `;
 
     res.send(html);
 });
+
 
 // // JavaScript function to open sign up form
 // function openSignUpForm() {
@@ -943,9 +990,13 @@ app.get('/cancel-tournament', async (req, res) => {
     const tournament_id = req.query.tournament_id;
     const id = req.headers.cookie.split(':')[2];
     const auth = await verrifyAuth(id);
-    const data = `{ "teamId": ${tournament_id}}`
-    const response = await PostInfo('/play-now/team/cancel',data, auth);
-    res.send(response);
+    const data = `{ "teamId": "${tournament_id}"}`
+    try{
+        const response = await PostInfo('/play-now/team/leave',data, auth);
+        res.send(response);
+    }catch(err){
+        res.send(err);
+    }
 });
 
 app.get('*', (req, res) => {
