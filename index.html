@@ -54,18 +54,17 @@
         .iframe-container {
             display: flex;
             flex-wrap: wrap; /* Allow elements to wrap */
-            justify-content: flex-start; /* Align items at the start */
+            justify-content: space-evenly; /* Align items at the start */
             align-items: flex-start; /* Align items at the start */
-            padding: 20px; /* Add padding to the container */
+            padding: 20px
         }
 
         /* Style for each iframe */
         .iframe-container iframe {
-            width: calc(50% - 10px); /* Adjust as needed */
-            height: 500px;
-            border: 2px solid #fff; /* White outline */
+            width: calc(45% - 10px); /* Adjust as needed */
+            border: 2px solid rgba(204, 0, 255, 1); /* White outline */
             border-radius: 5px;
-            box-shadow: white 0 0 10px; /* Darker glow effect */
+            box-shadow: rgba(204, 0, 255, 0.651) 0 0 10px; /* Darker glow effect */
             margin-bottom: 20px; /* Add space between iframes */
             height: calc(100vh - 40px); /* 100% viewport height minus top and bottom padding */
         }

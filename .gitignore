@@ -127,4 +127,6 @@ dist
 .yarn/install-state.gz
 .pnp.*
 .DS_Store
+.vscode
+auth.json
 .vscode/tasks.json
