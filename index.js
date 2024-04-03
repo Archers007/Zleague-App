@@ -1,100 +1,101 @@
-const express = require('express');
+const express = require("express");
 const app = express();
 const port = 9999; // You can use any port you prefer
-const fs = require('fs');
-const requests = require('requests');
-const jwt = require('jsonwebtoken');
-const { get } = require('http');
-const { json } = require('body-parser');
-const { Console } = require('console');
+const fs = require("fs");
+const requests = require("requests");
+const jwt = require("jsonwebtoken");
+const { get } = require("http");
+const { json } = require("body-parser");
+const { Console } = require("console");
 
 //https://www.zleague.gg/v2/wallet/cash-transactions
 
-app.use(express.static('public'));
+app.use(express.static("public"));
 
-app.get('/', (req, res) => {
-    res.send(fs.readFileSync('index.html', 'utf-8'));
+app.get("/", (req, res) => {
+	res.send(fs.readFileSync("index.html", "utf-8"));
 });
 
 async function verrifyAuth(user_id) {
-    authToken=""
-    user=""
-    if (fs.existsSync('auth.json')) {
-        let auth = JSON.parse(fs.readFileSync('auth.json', 'utf-8'));
-        //find the user with the matching id
-        for (let i = 0; i < auth.logins.length; i++) {
-            if (auth.logins[i].id == user_id) {
-                console.log('user found');
-                user = auth.logins[i];
-                authToken = auth.logins[i].authToken;
-            }
-        }
+	authToken = "";
+	user = "";
+	if (fs.existsSync("auth.json")) {
+		let auth = JSON.parse(fs.readFileSync("auth.json", "utf-8"));
+		//find the user with the matching id
+		for (let i = 0; i < auth.logins.length; i++) {
+			if (auth.logins[i].id == user_id) {
+				console.log("user found");
+				user = auth.logins[i];
+				authToken = auth.logins[i].authToken;
+			}
+		}
 
-        const decoded = jwt.decode(authToken);
-        try {
-            if (decoded.exp < Date.now() / 1000) {
-                const newToken = await getAuth(user.username, user.password);
-                user.authToken = newToken;
-                fs.writeFileSync('auth.json', JSON.stringify(auth, null, 2));
-                console.log('token expired');
-                return await newToken;
-            }
-        } catch (error) {
-            console.log('token expired');
-            return await getAuth(user.username, user.password);
-        }
-        return authToken;
-
-    }
+		const decoded = jwt.decode(authToken);
+		try {
+			if (decoded.exp < Date.now() / 1000) {
+				const newToken = await getAuth(user.username, user.password);
+				user.authToken = newToken;
+				fs.writeFileSync("auth.json", JSON.stringify(auth, null, 2));
+				console.log("token expired");
+				return await newToken;
+			}
+		} catch (error) {
+			console.log("token expired");
+			return await getAuth(user.username, user.password);
+		}
+		return authToken;
+	}
 }
 
-async function getAuth(username, password){
+async function getAuth(username, password) {
+	const url = "https://www.zleague.gg/v2/login";
 
-    const url = 'https://www.zleague.gg/v2/login';
+	const data = `username=${username}&password=${password}`;
 
-    const data = `username=${username}&password=${password}`;
-
-    const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: data,
-    });
-    authToken = JSON.parse(await response.text()).accessToken;
-    //open auth.json find the object with a matching username and update the authToken
-    let auth = JSON.parse(fs.readFileSync('auth.json', 'utf-8'));
-    for (let i = 0; i < auth.length; i++) {
-        if (auth[i].username == username) {
-            auth[i].authToken = authToken;
-        }
-    }
-    fs.writeFileSync('auth.json', JSON.stringify(auth, null, 2));
-    console.log(authToken);
-    return authToken;
+	const response = await fetch(url, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/x-www-form-urlencoded",
+		},
+		body: data,
+	});
+	authToken = JSON.parse(await response.text()).accessToken;
+	//open auth.json find the object with a matching username and update the authToken
+	let auth = JSON.parse(fs.readFileSync("auth.json", "utf-8"));
+	for (let i = 0; i < auth.length; i++) {
+		if (auth[i].username == username) {
+			auth[i].authToken = authToken;
+		}
+	}
+	fs.writeFileSync("auth.json", JSON.stringify(auth, null, 2));
+	console.log(authToken);
+	return authToken;
 }
 
 async function showTournamentDetails(tournament_id, authToken) {
-    const url = 'https://www.zleague.gg/v2/play-now/scoreboard/'+tournament_id;
+	const url = "https://www.zleague.gg/v2/play-now/scoreboard/" + tournament_id;
 
-    const response = await fetch(url, {
-        headers: {
-            'Authorization': 'Bearer ' + authToken,
-        },
-    });
+	const response = await fetch(url, {
+		headers: {
+			Authorization: "Bearer " + authToken,
+		},
+	});
 
-    const text = JSON.parse(await response.text());
-    scoreboard = text.scoreboard;
-    teamScoreboardMetadata = text.teamScoreboardMetadata;
-    return {"scoreboard":scoreboard, "teamScoreboardMetadata":teamScoreboardMetadata};
+	const text = JSON.parse(await response.text());
+	scoreboard = text.scoreboard;
+	teamScoreboardMetadata = text.teamScoreboardMetadata;
+	return {
+		scoreboard: scoreboard,
+		teamScoreboardMetadata: teamScoreboardMetadata,
+	};
 }
 
 async function buildTournament(tournament_id, auth) {
-    const data = await showTournamentDetails(tournament_id.event.id, auth);
-    const teamScoreboardMetadata = data.teamScoreboardMetadata;
-    const teams = data.scoreboard;
-    if (teams == undefined && teamScoreboardMetadata == undefined) {
-        return `
+	const data = await showTournamentDetails(tournament_id.event.id, auth);
+	const teamScoreboardMetadata = data.teamScoreboardMetadata;
+	const teams = data.scoreboard;
+	if (teams == undefined && teamScoreboardMetadata == undefined) {
+		return `
         <br>
         <div class="container incomplete-tournament">
             <h1>Incomplete Tournament Signup</h1>
@@ -105,15 +106,15 @@ async function buildTournament(tournament_id, auth) {
             <h2>Not in a tournament</h2>
         </div>
         `;
-    }
-    const start_time = tournament_id.event.startTime;
-    //make start time readable in minutes left end time is start time + 90 minutes
-    const end_time = new Date(start_time);
-    end_time.setMinutes(end_time.getMinutes() + 90);
-    //subtratc the current time from the end time to get the minutes left
-    const current_time = new Date();
-    minutes_left = Math.floor((end_time - current_time) / 60000);
-    let html = `
+	}
+	const start_time = tournament_id.event.startTime;
+	//make start time readable in minutes left end time is start time + 90 minutes
+	const end_time = new Date(start_time);
+	end_time.setMinutes(end_time.getMinutes() + 90);
+	//subtratc the current time from the end time to get the minutes left
+	const current_time = new Date();
+	minutes_left = Math.floor((end_time - current_time) / 60000);
+	let html = `
     <div class="container">
         <h1>Tournament Standings, Current Placement ${teamScoreboardMetadata.place}</h1>
         <h2>Minutes Left: ${minutes_left}</h2>
@@ -128,41 +129,41 @@ async function buildTournament(tournament_id, auth) {
             <tbody id="standings">
         `;
 
-    teams.sort((a, b) => b.points - a.points); // Sort teams by points
-    teams.forEach(team => {
-        if (team.teamName === 'YouKnowMe') {
-            net_negative = "background-color: #DD2000;"
-            net_neutral = "background-color: #FFD700;"
-            net_positive = "background-color: #00FF00;"
-            if(teamScoreboardMetadata.place >=6){
-                style = net_negative
-            }
-            if(teamScoreboardMetadata.place <=5){
-                style = net_neutral
-            } 
-            if(teamScoreboardMetadata.place <=2){
-                style = net_positive
-            }
+	teams.sort((a, b) => b.points - a.points); // Sort teams by points
+	teams.forEach((team) => {
+		if (team.teamName === "YouKnowMe") {
+			net_negative = "background-color: #DD2000;";
+			net_neutral = "background-color: #FFD700;";
+			net_positive = "background-color: #00FF00;";
+			if (teamScoreboardMetadata.place >= 6) {
+				style = net_negative;
+			}
+			if (teamScoreboardMetadata.place <= 5) {
+				style = net_neutral;
+			}
+			if (teamScoreboardMetadata.place <= 2) {
+				style = net_positive;
+			}
 
-            html += `
+			html += `
                 <tr style="${style}"> <!-- Highlight the user's team -->
                 <td>${team.teamName}</td>
                 <td class="center" >${team.points}</td>
                 <td class="center">${team.gamesPlayed}</td>
 
-            </tr>`
-        } else {
-            html += `
+            </tr>`;
+		} else {
+			html += `
                 <tr>
                     <td>${team.teamName}</td>
                     <td class="center">${team.points}</td>
                     <td class="center">${team.gamesPlayed}</td>
                 </tr>
             `;
-        }
-    });
+		}
+	});
 
-    html += `
+	html += `
                 </tbody>
             </table>
             <div class="btn" style="padding-top:20px;">
@@ -172,17 +173,17 @@ async function buildTournament(tournament_id, auth) {
             </div>
         </div>
     `;
-    return html;
+	return html;
 }
 
-app.get('/tournament/:id', async (req, res) => {
-    id = req.params.id;
-    auth = await verrifyAuth(id);
+app.get("/tournament/:id", async (req, res) => {
+	id = req.params.id;
+	auth = await verrifyAuth(id);
 
-    // showTournamentDetails(id,auth)
-    const up_teams = await fetchInfo('/account/upcoming-teams', await auth);
-    // return;
-    let html = `
+	// showTournamentDetails(id,auth)
+	const up_teams = await fetchInfo("/account/upcoming-teams", await auth);
+	// return;
+	let html = `
         <!DOCTYPE html>
         <html lang="en">
         <head>
@@ -406,58 +407,6 @@ app.get('/tournament/:id', async (req, res) => {
                     background-color: #34495e;
                 }
 
-                input[type="radio"] {
-                    display: none; /* Hide the actual radio button */
-                }
-            
-                /* Custom Radio Button Styles */
-                .radio-container {
-                    display: inline-block;
-                    position: relative;
-                    padding-left: 30px;
-                    margin-right: 15px;
-                    cursor: pointer;
-                }
-            
-                .radio-container input[type="radio"] + .radio-custom {
-                    position: absolute;
-                    left: 0;
-                    top: 0;
-                    bottom: 0;
-                    width: 20px;
-                    height: 20px;
-                    border: 1px solid #aaa;
-                    border-radius: 50%;
-                    background-color: transparent;
-                    transition: background-color 0.3s, border-color 0.3s;
-                }
-            
-                .radio-container input[type="radio"]:checked + .radio-custom {
-                    background-color: #2c3e50; /* Change background color when radio is checked */
-                    border-color: #2c3e50; /* Change border color when radio is checked */
-                }
-            
-                .radio-custom:after {
-                    content: "";
-                    display: block;
-                    width: 12px;
-                    height: 12px;
-                    margin: 3px;
-                    border-radius: 50%;
-                    background: white;
-                    transition: transform 0.3s;
-                    transform: scale(0); /* Initially hidden */
-                }
-            
-                .radio-container input[type="radio"]:checked + .radio-custom:after {
-                    transform: scale(1); /* Show the checkmark when radio is checked */
-                }
-            
-                /* Label Styles */
-                .radio-label {
-                    margin-left: 5px;
-                    vertical-align: middle;
-                }
             
             </style>
             <script>
@@ -470,14 +419,13 @@ app.get('/tournament/:id', async (req, res) => {
         </head>
         <body>
         `;
-        
-        
-    if (up_teams && up_teams.teams.length>0) {
-        for (let i = 0; i < up_teams.teams.length; i++) {
-            html += await buildTournament(up_teams.teams[i],auth);
-        }
-    } else {
-        html += `
+
+	if (up_teams && up_teams.teams.length > 0) {
+		for (let i = 0; i < up_teams.teams.length; i++) {
+			html += await buildTournament(up_teams.teams[i], auth);
+		}
+	} else {
+		html += `
 
             <h2 class="NA">Not in a tournament</h2>
             <div class="btn">
@@ -485,25 +433,16 @@ app.get('/tournament/:id', async (req, res) => {
             </div>
             
         `;
-    }
+	}
 
-    html += `
+	html += `
     <div id="signUpModal" style="display:none;" class="modal">
                 <div class="modal-content">
                     <a class="close" onclick="closeSignUpModal()">X</a>
                     <h2 style="text-align:center;">Sign Up</h2>
                     <form id="signUpForm" action="/Apex-Sign-Up">
-                    <div style="display:flex;justify-content:space-evenly;">
-                        <label class="radio-container" for="c">Cash
-                            <input type="radio" id="c" name="cc" value="CASH">
-                            <span class="radio-custom"></span>
-                        </label>
-                        <label class="radio-container" for="cc">Credit
-                            <input type="radio" id="cc" name="cc" value="CREDIT">
-                            <span class="radio-custom"></span>
-                        </label>
-                    </div>
                    
+                    <h1>Apex Legends</h1>
                     <div style="display: flex; justify-content: space-between; text-align:center;">
                         <div>
                             <label for="legend">Legend:</label>
@@ -581,85 +520,82 @@ app.get('/tournament/:id', async (req, res) => {
         </html>
     `;
 
-    res.send(html);
+	res.send(html);
 });
-
 
 // // JavaScript function to open sign up form
 // function openSignUpForm() {
 //     window.open('/register?game=Apex&cc=CASH&amount=10&legend=Pathfinder', '_blank');
 // }
 
-
 async function fetchInfo(url, authToken) {
-    base_url = 'https://www.zleague.gg/v2'+url;
-    const response = await fetch(base_url, {
-        headers: {
-            'Authorization': 'Bearer ' + authToken,
-        },
-    });
-    // res = JSON.parse(await response.text());
-    res = await response.text();
-    return JSON.parse(res);
+	base_url = "https://www.zleague.gg/v2" + url;
+	const response = await fetch(base_url, {
+		headers: {
+			Authorization: "Bearer " + authToken,
+		},
+	});
+	// res = JSON.parse(await response.text());
+	res = await response.text();
+	return JSON.parse(res);
 }
 
-async function PostInfo(url,data, authToken) {
-    const base_url = 'https://www.zleague.gg/v2' + url;
+async function PostInfo(url, data, authToken) {
+	const base_url = "https://www.zleague.gg/v2" + url;
 
-    const body = `${data}`;
+	const body = `${data}`;
 
-    const response = await fetch(base_url, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + authToken,
-        },
-        body: body,
-    });
-    // res = JSON.parse(await response.text());
-    res = await response.text();
-    console.log(res);
-    return JSON.parse(res);
+	const response = await fetch(base_url, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+			Authorization: "Bearer " + authToken,
+		},
+		body: body,
+	});
+	// res = JSON.parse(await response.text());
+	res = await response.text();
+	console.log(res);
+	return JSON.parse(res);
 }
 
+app.get("/account/:id", async (req, res) => {
+	id = req.params.id;
 
-app.get('/account/:id', async (req, res) => {
-    id = req.params.id;
+	const auth = await verrifyAuth(id);
+	// PostInfo('/wallet/initiate-withdraw', auth);
+	const account = await fetchInfo("/account", auth);
+	// console.log(await fetchInfo('/profile?username=Edgelord69420'));
 
-    const auth = await verrifyAuth(id);
-    // PostInfo('/wallet/initiate-withdraw', auth);
-    const account = await fetchInfo('/account', auth);
-    // console.log(await fetchInfo('/profile?username=Edgelord69420'));
+	// fetchInfo('/play-now/team/register')
+	const winnings = await fetchInfo("/wallet/cash-transactions", auth);
+	let total_winnings = 0;
+	for (let i = 0; i < winnings.length; i++) {
+		if (winnings[i].reasonType == "PAYMENT") {
+			total_winnings += winnings[i].cashAmount;
+		}
+	}
+	const credit_winnings = await fetchInfo("/account/credit-transactions", auth);
+	let Tcredit_winnings = 0;
+	for (let i = 0; i < credit_winnings.length; i++) {
+		if (credit_winnings[i].transactionType == "ADDED") {
+			// console.log(credit_winnings[i]);
+			Tcredit_winnings += credit_winnings[i].amount;
+		}
+	}
+	// Get account details from /account endpoint and /payments/balances endpoint
 
-    // fetchInfo('/play-now/team/register')
-    const winnings = await fetchInfo('/wallet/cash-transactions', auth);
-    let total_winnings = 0; 
-    for (let i = 0; i < winnings.length; i++) {
-        if(winnings[i].reasonType == 'PAYMENT'){
-            total_winnings += winnings[i].cashAmount;
-        }
-    }
-    const credit_winnings = await fetchInfo('/account/credit-transactions', auth);
-    let Tcredit_winnings = 0; 
-    for (let i = 0; i < credit_winnings.length; i++) {
-        if(credit_winnings[i].transactionType == 'ADDED'){
-            // console.log(credit_winnings[i]);
-            Tcredit_winnings += credit_winnings[i].amount;
-        }
-    }
-    // Get account details from /account endpoint and /payments/balances endpoint
-    
-    const balances = await fetchInfo('/payments/balances', auth);
-    // Extract necessary information from the response
-    const credits = account.creditBalance;
-    const username = account.userName;
-    const cash = balances.totalBalance;
-    const non_withdrawable = balances.nonwithdrawableBalance;
-    const withdrawable = balances.withdrawableBalance;
-    const verified = account.identityVerificationStatus;
+	const balances = await fetchInfo("/payments/balances", auth);
+	// Extract necessary information from the response
+	// const credits = account.creditBalance; //depricated
+	const username = account.userName;
+	const cash = balances.totalBalance;
+	const non_withdrawable = balances.nonwithdrawableBalance;
+	const withdrawable = balances.withdrawableBalance;
+	const verified = account.identityVerificationStatus;
 
-    // Generate HTML with the account information
-    let html = `
+	// Generate HTML with the account information
+	let html = `
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -815,11 +751,10 @@ app.get('/account/:id', async (req, res) => {
                 <p><strong>ID:</strong> ${id}</p>
                 <p><strong>Total Cash Withdrawn:</strong> ${total_winnings} USD</p>
                 <p><strong>Total Credits Won:</strong> ${Tcredit_winnings}</p>
-                <p><strong>Credits:</strong> ${credits}</p>
                 <p><strong>Cash:</strong> ${cash}</p>
                 <p><strong>Non-withdrawable Balance:</strong> ${non_withdrawable}</p>
                 <p><strong>Withdrawable Balance:</strong> ${withdrawable}  <button class="zleague-button" onclick="openWithdrawModal()">Withdraw Funds</button></p>
-                <p><strong>Verified:</strong> ${verified ? 'Yes' : 'No'}</p>
+                <p><strong>Verified:</strong> ${verified ? "Yes" : "No"}</p>
             </div>
         </div>
     
@@ -886,57 +821,61 @@ app.get('/account/:id', async (req, res) => {
         </html>
     `;
 
-    res.send(html);
+	res.send(html);
 });
 
-app.get('/login', async (req, res) => {
-    console.log('logging in')
-    const username = req.query.email;
-    const password = req.query.password;
-    const auth = await getAuth(username, password);
-    const account = await fetchInfo('/account', auth);
-    const login_id = await account.id;
+app.get("/login", async (req, res) => {
+	console.log("logging in");
+	const username = req.query.email;
+	const password = req.query.password;
+	const auth = await getAuth(username, password);
+	const account = await fetchInfo("/account", auth);
+	const login_id = await account.id;
 
-    const data = {
-        "login": "true",
-        "username": username,
-        "password": password,
-        "id": login_id,
-        "authToken": auth
-    }
-    //write to auth.json file with data and make it look pretty
-    //append the new data to the file
-    //check if the user is already in the file
-    opend_file = JSON.parse(fs.readFileSync('auth.json', 'utf-8'));
-    for (let i = 0; i < opend_file.logins.length; i++) {
-        if (opend_file.logins[i].id === login_id) {
-            await verrifyAuth(login_id);
-            res.send({ "login": "true", "username": username, "id": login_id});
-            return;
-        }
-    }
-    opend_file.logins.push(data);
-    fs.writeFileSync('auth.json', JSON.stringify(opend_file, null, 2));
-    res.send({ "login": "true", "username": username, "id": `${login_id}`});
+	const data = {
+		login: "true",
+		username: username,
+		password: password,
+		id: login_id,
+		authToken: auth,
+	};
+	//write to auth.json file with data and make it look pretty
+	//append the new data to the file
+	//check if the user is already in the file
+	opend_file = JSON.parse(fs.readFileSync("auth.json", "utf-8"));
+	for (let i = 0; i < opend_file.logins.length; i++) {
+		if (opend_file.logins[i].id === login_id) {
+			await verrifyAuth(login_id);
+			res.send({ login: "true", username: username, id: login_id });
+			return;
+		}
+	}
+	opend_file.logins.push(data);
+	fs.writeFileSync("auth.json", JSON.stringify(opend_file, null, 2));
+	res.send({ login: "true", username: username, id: `${login_id}` });
 });
 
-app.get('/withdraw', async (req, res) => {
-    const amount = req.query.amount;
-    const id = req.headers.cookie.split(':')[2];
-    const body = `{"amount":${amount}}`;
-    const auth = await verrifyAuth(id);
-    const response = await PostInfo('/wallet/initiate-withdraw',body, auth);
-    if(response.paypalPayoutId){
-        response.amount = amount;
-        const withdraw = await PostInfo('/wallet/withdraw',JSON.stringify(response), auth);
-        res.send(withdraw);
-        return;
-    }
-    res.send(response);
+app.get("/withdraw", async (req, res) => {
+	const amount = req.query.amount;
+	const id = req.headers.cookie.split(":")[2];
+	const body = `{"amount":${amount}}`;
+	const auth = await verrifyAuth(id);
+	const response = await PostInfo("/wallet/initiate-withdraw", body, auth);
+	if (response.paypalPayoutId) {
+		response.amount = amount;
+		const withdraw = await PostInfo(
+			"/wallet/withdraw",
+			JSON.stringify(response),
+			auth,
+		);
+		res.send(withdraw);
+		return;
+	}
+	res.send(response);
 });
 
-async function register(data, authToken){
-    let apex_cash=`{
+async function register(data, authToken) {
+	let apex_cash = `{
         "details": {
           "entryFee": ${data.amount},
           "entryFeeType": "CASH",
@@ -949,98 +888,90 @@ async function register(data, authToken){
           "clientType": "MOBILE",
           "game": "APEX_LEGENDS"
         }
-      }`
-    let apex_credit=`{
-        "details": {
-          "entryFee": ${data.amount},
-          "entryFeeType": "CREDIT",
-          "game": "APEX_LEGENDS",
-          "prizeType": "CREDIT",
-          "teamName": "YouKnowMe",
-          "scoringFormat": "APEX_STANDARD"
-        },
-        "playerMetadata": {
-          "clientType": "MOBILE",
-          "game": "APEX_LEGENDS"
-        }
-      }`
+      }`;
 
-    let body = data.cc == 'CASH' ? apex_cash : apex_credit;
+	let body = apex_cash;
 
-    res = await PostInfo('/play-now/team/register', body, authToken);
-    console.log(res);
-    let team_id = res.teamId;
-    let Tournament_id = res.tournamentId;
-    await pay_team(team_id,data,authToken);
-    await legend_select(team_id, Tournament_id, data, authToken);
+	res = await PostInfo("/play-now/team/register", body, authToken);
+	console.log(res);
+	let team_id = res.teamId;
+	let Tournament_id = res.tournamentId;
+	await pay_team(team_id, data, authToken);
+	await legend_select(team_id, Tournament_id, data, authToken);
 
-    await start_tournament(team_id, Tournament_id,authToken);
+	await start_tournament(team_id, Tournament_id, authToken);
 }
 
-async function pay_team(team_id, data, authToken){
-    const cash_body = `{"teamId":"${team_id}","cashAmount":${data.amount},"creditAmount":0}`;
-    const credit_body = `{"teamId":"${team_id}","cashAmount":0,"creditAmount":${data.amount}}`;
-    
-    res = await PostInfo('/wallet/wallet-transaction', data.cc == 'CASH' ? cash_body : credit_body, authToken);
-    console.log(res);
+async function pay_team(team_id, data, authToken) {
+	const cash_body = `{"teamId":"${team_id}","cashAmount":${data.amount},"creditAmount":0}`;
+	const credit_body = `{"teamId":"${team_id}","cashAmount":0,"creditAmount":${data.amount}}`;
+
+	res = await PostInfo(
+		"/wallet/wallet-transaction",
+		data.cc == credit_body,
+		authToken,
+	);
+	console.log(res);
 }
 
-async function legend_select(team_id, tournament_id, data, authToken){
-    const url = 'https://www.zleague.gg/v2/tournament/player/change-legend';
-    const legend = data.legend;
-    const player = await fetchInfo('/account/upcoming-teams', authToken);
-    console.log("player",player.teams[0].teammates)
-    const player_id = await player.teams[0].teammates[0].id;
+async function legend_select(team_id, tournament_id, data, authToken) {
+	const url = "https://www.zleague.gg/v2/tournament/player/change-legend";
+	const legend = data.legend;
+	const player = await fetchInfo("/account/upcoming-teams", authToken);
+	console.log("player", player.teams[0].teammates);
+	const player_id = await player.teams[0].teammates[0].id;
 
-    const body= `{"teamId":"${team_id}","tournamentId":"${tournament_id}","newLegend":"${legend}","playerId":"${player_id}"}`
+	const body = `{"teamId":"${team_id}","tournamentId":"${tournament_id}","newLegend":"${legend}","playerId":"${player_id}"}`;
 
-    res = await PostInfo('/tournament/player/change-legend', body, authToken);
-    console.log(res);
+	res = await PostInfo("/tournament/player/change-legend", body, authToken);
+	console.log(res);
 }
 
-async function start_tournament(team_id, tournament_id,authToken){
-    const url = 'https://www.zleague.gg/v2/play-now/competitors-search';
-    const body= `{"tournamentId":"${tournament_id}","teamId":"${team_id}"}`
-    try {
-        res = await PostInfo('/play-now/competitors-search', body, authToken);
-        console.log(res)
-    } catch (error) {
-        console.log("Tournament has already started")
-    }
+async function start_tournament(team_id, tournament_id, authToken) {
+	const url = "https://www.zleague.gg/v2/play-now/competitors-search";
+	const body = `{"tournamentId":"${tournament_id}","teamId":"${team_id}"}`;
+	try {
+		res = await PostInfo("/play-now/competitors-search", body, authToken);
+		console.log(res);
+	} catch (error) {
+		console.log("Tournament has already started");
+	}
 }
 
-app.get('/Apex-Sign-Up', async (req, res) => {
-    console.log(req.query);
-    const id = req.headers.cookie.split(':')[2];
-    const data = req.query;
-    data.player_id = id;
-    const auth = await verrifyAuth(id);
-    await register(data, auth);
-    // const response = await fetchInfo('/play-now/team/register', auth);
-    res.redirect('/tournament/'+id);
+app.get("/Apex-Sign-Up", async (req, res) => {
+	console.log(req.query);
+	const id = req.headers.cookie.split(":")[2];
+	const data = req.query;
+	data.player_id = id;
+	const auth = await verrifyAuth(id);
+	await register(data, auth);
+	// const response = await fetchInfo('/play-now/team/register', auth);
+	res.redirect("/tournament/" + id);
 });
 
-app.get('/cancel-tournament', async (req, res) => {
-    const tournament_id = req.query.tournament_id;
-    const id = req.headers.cookie.split(':')[2];
-    const auth = await verrifyAuth(id);
-    const data = `{ "teamId": "${tournament_id}"}`
-    try{
-        const response = await PostInfo('/play-now/team/leave',data, auth);
-        res.send(response);
-    }catch(err){
-        res.send(err);
-    }
+app.get("/cancel-tournament", async (req, res) => {
+	const tournament_id = req.query.tournament_id;
+	const id = req.headers.cookie.split(":")[2];
+	const auth = await verrifyAuth(id);
+	const data = `{ "teamId": "${tournament_id}"}`;
+	try {
+		const response = await PostInfo("/play-now/team/leave", data, auth);
+		res.send(response);
+	} catch (err) {
+		res.send(err);
+	}
 });
 
-app.get('*', (req, res) => {
-    console.log(req.url);
-    res.status(404).send('Route not found');
-})
-app.post('*', (req, res) => {
-    console.log(req.url);
-    res.status(404).send('Route not found');
-})
+app.get("*", (req, res) => {
+	console.log(req.url);
+	res.status(404).send("Route not found");
+});
+app.post("*", (req, res) => {
+	console.log(req.url);
+	res.status(404).send("Route not found");
+});
 app.listen(port, () => {
-    console.log(`Server is listening on port ${port} \n-> http://service.strmlight.com`);
+	console.log(
+		`Server is listening on port ${port} \n-> http://service.strmlight.com`,
+	);
 });
