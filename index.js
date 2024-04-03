@@ -216,7 +216,24 @@ app.get('/tournament/:id', async (req, res) => {
                     font-family: Arial, sans-serif;
                     margin: 0;
                     padding: 0;
-                    background-color: #444; /* Dark background color */
+                    background: #000000;
+  --gap: 5em;
+  --line: 1px;
+  --color: rgba(255, 255, 255, 0.2);
+
+  background-image: linear-gradient(
+      -90deg,
+      transparent calc(var(--gap) - var(--line)),
+      var(--color) calc(var(--gap) - var(--line) + 1px),
+      var(--color) var(--gap)
+    ),
+    linear-gradient(
+      0deg,
+      transparent calc(var(--gap) - var(--line)),
+      var(--color) calc(var(--gap) - var(--line) + 1px),
+      var(--color) var(--gap)
+    );
+  background-size: var(--gap) var(--gap);
                     color: #fff; /* Text color */
                 }
 
@@ -654,7 +671,24 @@ app.get('/account/:id', async (req, res) => {
                 font-family: Arial, sans-serif;
                 margin: 0;
                 padding: 0;
-                background-color: #444; /* Dark background color */
+                background-color: #000; /* Dark background color */
+                --gap: 5em;
+                --line: 1px;
+                --color: rgba(255, 255, 255, 0.2);
+
+                background-image: linear-gradient(
+                    -90deg,
+                    transparent calc(var(--gap) - var(--line)),
+                    var(--color) calc(var(--gap) - var(--line) + 1px),
+                    var(--color) var(--gap)
+                    ),
+                    linear-gradient(
+                    0deg,
+                    transparent calc(var(--gap) - var(--line)),
+                    var(--color) calc(var(--gap) - var(--line) + 1px),
+                    var(--color) var(--gap)
+                    );
+                background-size: var(--gap) var(--gap);
                 color: #fff; /* Text color */
                 display: flex;
                 justify-content: center;
@@ -680,9 +714,7 @@ app.get('/account/:id', async (req, res) => {
                 width: 100%;
                 max-width: 100%;
                 padding: 20px;
-                background-color: #444; /* Darker container background */
                 border-radius: 20px;
-
             }
 
             h1 {
@@ -697,8 +729,10 @@ app.get('/account/:id', async (req, res) => {
             .account-info p {
                 margin: 10px 0;
                 padding: 10px;
-                background-color: #555; /* Darker rectangle background */
-                border-radius: 10px;
+                background-color: #111; /* Darker rectangle background */
+                border: 2px solid #2a2e42; /* White outline */
+                border-radius: 5px;
+                box-shadow: #2a2e42 0 0 10px;
                 font-size: 20px;
             }
 
