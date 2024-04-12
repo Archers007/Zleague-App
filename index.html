@@ -3,58 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZLEAGUE API Request</title>
+    <title>Zleague Web</title>
     <style>
         /* Dark grey background */
         body {
-  font-family: 'Anonymous Pro', monospace;  
-
-  width: 100%;
-  height: 100%;
-
-  background: radial-gradient(ellipse at bottom, #0d1d31 0%, #0c0d13 100%);
-  
-  overflow: hidden;
-}
+            font-family: 'Anonymous Pro', monospace;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at bottom, #0d1d31 0%, #0c0d13 100%);
+            overflow-x: hidden;
+            margin: 0;
+            padding: 0;
+        }
 
         /* Add your zleague styles here */
-        .zleague-button {
+        .top-bar {
+            width: 100%;
+            height: 70px; /* Increased height */
             background-color: #2c3e50;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+        }
+
+        .logo {
             color: #ffffff;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
+            font-size: 24px;
+        }
+
+        .logo p {
+            font: 1em sans-serif;
+        }
+
+        .buttons {
+            padding-right: 30px; /* Adjusted margin to move buttons a little further from the right */
+        }
+
+        .buttons button {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding-top:0;
+            padding: 16px 36px;
+            border: 4px solid transparent;
+            border-color: transparent;
+            font-size: 16px;
+            background-color: inherit;
+            border-radius: 100px;
+            font-weight: 600;
+            color: greenyellow;
+            box-shadow: 0 0 0 2px greenyellow;
             cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* subtle glow effect */
-            margin: 0 auto; /* Center horizontally */
-            display: block; /* Ensure block-level element behavior */
+            overflow: hidden;
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
         }
 
-        .zleague-button:hover {
-            background-color: #34495e;
+        .buttons button svg {
+            position: absolute;
+            width: 24px;
+            fill: greenyellow;
+            z-index: 9;
+            transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+            top: 25%;
         }
 
-        /* Style for container to display iframes side by side */
+        .buttons button .arr-1 {
+            right: 10%;
+        }
+
+        .buttons button .arr-2 {
+            left: -25%;
+        }
+
+        .buttons button .circle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            background-color: greenyellow;
+            border-radius: 50%;
+            opacity: 0;
+            transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .buttons button .text {
+            position: relative;
+            z-index: 1;
+            transform: translateX(-12px);
+            transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .buttons button:hover {
+            box-shadow: 0 0 0 12px transparent;
+            color: #212121;
+            border-radius: 12px;
+        }
+
+        .buttons button:hover .arr-1 {
+            right: -25%;
+        }
+
+        .buttons button:hover .arr-2 {
+            left: 16px;
+        }
+
+        .buttons button:hover .text {
+            transform: translateX(12px);
+        }
+
+        .buttons button:hover svg {
+            fill: #212121;
+        }
+
+        .buttons button:active {
+            scale: 0.95;
+            box-shadow: 0 0 0 4px greenyellow;
+        }
+
+        .buttons button:hover .circle {
+            width: 220px;
+            height: 220px;
+            opacity: 1;
+        }
+
+        .buttons button:last-child {
+            margin-left: 10px;
+        }
+
         .iframe-container {
             display: flex;
-            flex-wrap: wrap; /* Allow elements to wrap */
-            justify-content: space-evenly; /* Align items at the start */
-            align-items: flex-start; /* Align items at the start */
+            flex-wrap: wrap;
+            justify-content: space-evenly;
+            align-items: flex-start;
             padding: 20px
         }
 
-        /* Style for each iframe */
         .iframe-container iframe {
-            width: calc(45% - 10px); /* Adjust as needed */
-            border: 2px solid #2a2e42; /* White outline */
+            width: calc(45% - 10px);
+            border: 2px solid #2a2e42;
             border-radius: 5px;
-            box-shadow: #2a2e42 0 0 10px; /* Darker glow effect */
-            margin-bottom: 20px; /* Add space between iframes */
-            height: calc(100vh - 40px); /* 100% viewport height minus top and bottom padding */
+            box-shadow: #2a2e42 0 0 10px;
+            margin-bottom: 20px;
+            height: calc(100vh - 90px); /* Adjusted height to accommodate the top bar */
         }
 
-
-        /* Popup styles */
         .popup {
             display: none;
             position: fixed;
@@ -68,15 +164,173 @@
             align-items: center;
         }
 
-        .close {
+        .popup-content {
+            position: relative;
+            width: 400px;
+            padding: 20px;
+            background: #2c3e50;
+            color: #fff;
+            border-radius: 10px;
+        }
+
+        .popup-close {
             position: absolute;
             top: 10px;
             right: 10px;
             cursor: pointer;
+            color: #fff;
+        }
+
+        .popup-field {
+            margin-bottom: 20px;
+        }
+
+        .popup-field label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .popup-field input {
+            width: calc(100% - 10px);
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    </style>
+    <style>
+        .login-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 400px;
+            padding: 40px;
+            transform: translate(-50%, -50%);
+            background: rgba(24, 20, 20, 0.987);
+            box-sizing: border-box;
+            box-shadow: 0 15px 25px rgba(0, 0, 0, .6);
+            border-radius: 10px;
+        }
+    
+        .login-box .user-box {
+            position: relative;
+        }
+    
+        .login-box .user-box input {
+            width: 100%;
+            padding: 10px 0;
+            font-size: 16px;
+            color: #fff;
+            margin-bottom: 30px;
+            border: none;
+            border-bottom: 1px solid #fff;
+            outline: none;
+            background: transparent;
+        }
+    
+        .login-box .user-box label {
+            position: absolute;
+            top: 0;
+            left: 0;
+            padding: 10px 0;
+            font-size: 16px;
+            color: #fff;
+            pointer-events: none;
+            transition: .5s;
+        }
+    
+        .login-box .user-box input:focus~label,
+        .login-box .user-box input:valid~label {
+            top: -20px;
+            left: 0;
+            color: #bdb8b8;
+            font-size: 12px;
+        }
+    
+        .login-box form a {
+            position: relative;
+            display: inline-block;
+            padding: 10px 20px;
+            color: #ffffff;
+            font-size: 16px;
+            text-decoration: none;
+            text-transform: uppercase;
+            overflow: hidden;
+            transition: .5s;
+            margin-top: 40px;
+            letter-spacing: 4px
+        }
+    
+        .login-box a:hover {
+            background: rgb(209, 209, 209);
+            color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgb(209, 209, 209),
+                0 0 25px rgb(209, 209, 209),
+                0 0 50px rgb(209, 209, 209),
+                0 0 100px rgb(209, 209, 209);
+            cursor: pointer;
+        }
+    
+        .login-box a span {
+            position: absolute;
+            display: block;
+        }
+    
+        @keyframes btn-anim1 {
+            0% {
+                left: -100%;
+            }
+    
+            50%,
+            100% {
+                left: 100%;
+            }
+        }
+    
+        .login-box a span:nth-child(1) {
+            bottom: 2px;
+            left: -100%;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgb(209, 209, 209));
+            animation: btn-anim1 2s linear infinite;
         }
     </style>
 </head>
+
 <body>
+    <div class="top-bar">
+        <div class="logo">
+            <p><strong>ZLEAGUE</strong> PRO</p>
+        </div>
+        <div class="buttons">
+            <!-- Show the login button only if the cookie is not found -->
+            <button class="animated-button login-button" onclick="document.getElementById('login_form').style = 'display:block'" id="loginButton">
+                <svg viewBox="0 0 24 24" class="arr-2" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"></path>
+                </svg>
+                <span class="text">Login</span>
+                <span class="circle"></span>
+                <svg viewBox="0 0 24 24" class="arr-1" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"></path>
+                </svg>
+            </button>
+            <!-- Initially hide the account button -->
+            <button class="animated-button account-button" onclick="openAccountPopup()" id="accountButton" style="display: none;">
+                <svg viewBox="0 0 24 24" class="arr-2" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"></path>
+                </svg>
+                <span class="text">Account</span>
+                <span class="circle"></span>
+                <svg viewBox="0 0 24 24" class="arr-1" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"></path>
+                </svg>
+            </button>
+            <!-- Logout button -->
+            
+        </div>
+    </div>
+
     <div class="iframe-container">
         <iframe src="/tournament"></iframe>
         <iframe src="/account"></iframe>
@@ -84,124 +338,50 @@
 
     <div class="popup" id="popup">
         <div class="popup-content">
-            <style>
-                .login-box {
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                width: 400px;
-                padding: 40px;
-                transform: translate(-50%, -50%);
-                background: rgba(24, 20, 20, 0.987);
-                box-sizing: border-box;
-                box-shadow: 0 15px 25px rgba(0,0,0,.6);
-                border-radius: 10px;
-                }
-
-                .login-box .user-box {
-                position: relative;
-                }
-
-                .login-box .user-box input {
-                width: 100%;
-                padding: 10px 0;
-                font-size: 16px;
-                color: #fff;
-                margin-bottom: 30px;
-                border: none;
-                border-bottom: 1px solid #fff;
-                outline: none;
-                background: transparent;
-                }
-
-                .login-box .user-box label {
-                position: absolute;
-                top: 0;
-                left: 0;
-                padding: 10px 0;
-                font-size: 16px;
-                color: #fff;
-                pointer-events: none;
-                transition: .5s;
-                }
-
-                .login-box .user-box input:focus ~ label,
-                .login-box .user-box input:valid ~ label {
-                top: -20px;
-                left: 0;
-                color: #bdb8b8;
-                font-size: 12px;
-                }
-
-                .login-box form a {
-                position: relative;
-                display: inline-block;
-                padding: 10px 20px;
-                color: #ffffff;
-                font-size: 16px;
-                text-decoration: none;
-                text-transform: uppercase;
-                overflow: hidden;
-                transition: .5s;
-                margin-top: 40px;
-                letter-spacing: 4px
-                }
-
-                .login-box a:hover {
-                background: rgb(209, 209, 209);
-                color: #fff;
-                border-radius: 5px;
-                box-shadow: 0 0 5px rgb(209, 209, 209),
-                            0 0 25px rgb(209, 209, 209),
-                            0 0 50px rgb(209, 209, 209),
-                            0 0 100px rgb(209, 209, 209);
-                cursor: pointer;
-                }
-
-                .login-box a span {
-                position: absolute;
-                display: block;
-                }
-
-                @keyframes btn-anim1 {
-                0% {
-                    left: -100%;
-                }
-
-                50%,100% {
-                    left: 100%;
-                }
-                }
-
-                .login-box a span:nth-child(1) {
-                bottom: 2px;
-                left: -100%;
-                width: 100%;
-                height: 2px;
-                background: linear-gradient(90deg, transparent, rgb(209, 209, 209));
-                animation: btn-anim1 2s linear infinite;
-                }
-            </style>
-            <span class="close" onclick="closePopup()">&times;</span>
+            <span class="popup-close" onclick="closePopup()">&times;</span>
             <div class="login-box">
- 
-                <form id="">
-                  <div class="user-box">
-                    <input type="text" name="email" id="email" required="true">
-                    <label>Username</label>
-                  </div>
-                  <div class="user-box">
-                    <input type="password" name="password" id="password" required="true">
-                    <label>Password</label>
-                  </div><center>
-                        <a onclick="login()">
-                               LOGIN
-                           <span></span>
-                        </a></center>
-
+                <form>
+                    <div class="popup-field">
+                        <label for="username">Username:</label>
+                        <input type="text" name="username" id="username" readonly>
+                    </div>
+                    <div class="popup-field">
+                        <label for="serverStatus">Server Status:</label>
+                        <input type="text" name="serverStatus" id="serverStatus" readonly>
+                    </div>
+                    <center class="buttons">
+                        <button class="animated-button logout-button" onclick="logout()" id="logoutButton">
+                            <svg viewBox="0 0 24 24" class="arr-2" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"></path>
+                            </svg>
+                            <span class="text">Logout</span>
+                            <span class="circle"></span>
+                            <svg viewBox="0 0 24 24" class="arr-1" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"></path>
+                            </svg>
+                        </button>
+                    </center>
                 </form>
-              </div>
+            </div>
         </div>
+    </div>
+    <div id="login_form" class="login-box" style="display: none;">
+ 
+        <form  >
+          <div class="user-box">
+            <input type="text" name="email" id="email" required="true">
+            <label>Username</label>
+          </div>
+          <div class="user-box">
+            <input type="password" name="password" id="password" required="true">
+            <label>Password</label>
+          </div><center>
+                <a onclick="login()">
+                       LOGIN
+                   <span></span>
+                </a></center>
+
+        </form>
     </div>
 
     <script>
@@ -212,23 +392,64 @@
             if (parts.length === 2) return parts.pop().split(';').shift();
         }
 
-        // Function to close the popup
+        // Function to close the login popup
         function closePopup() {
             document.getElementById('popup').style.display = 'none';
+        }
+
+        // Function to open the login popup
+        function openPopup() {
+            document.getElementById('popup').style.display = 'flex';
+        }
+
+        // Function to open the account popup
+        function openAccountPopup() {
+            const zleagueCookie = getCookie('zleague_credentials');
+            if (!zleagueCookie) {
+                alert('You need to login first.');
+                return;
+            }
+            // Assuming the username is the first part of the cookie
+            const username = zleagueCookie.split(':')[0];
+            document.getElementById('username').value = username;
+            // Send a GET request to check server status
+            fetch('/ping')
+                .then(response => {
+                    if (response.ok) {
+                        document.getElementById('serverStatus').value = 'LIVE';
+                    } else {
+                        document.getElementById('serverStatus').value = 'OFFLINE';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking server status:', error);
+                    document.getElementById('serverStatus').value = 'ERROR';
+                });
+            document.getElementById('popup').style.display = 'flex';
+        }
+
+        // Function to logout
+        function logout() {
+            document.cookie = 'zleague_credentials=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            location.reload();
         }
 
         window.onload = function () {
             const zleagueCookie = getCookie('zleague_credentials');
             console.log(zleagueCookie)
-            //set the iframes to the user's id
             if (!zleagueCookie) {
-                document.getElementById('popup').style.display = 'flex';
+                document.getElementById('loginButton').style.display = 'block';
+                document.getElementById('accountButton').style.display = 'none';
+                document.getElementById('logoutButton').style.display = 'none'; // Hide logout button if not logged in
+            } else {
+                document.getElementById('loginButton').style.display = 'none';
+                document.getElementById('accountButton').style.display = 'block';
+                document.getElementById('logoutButton').style.display = 'block'; // Show logout button if logged in
             }
             for (let iframe of document.querySelectorAll('iframe')) {
                 iframe.src = iframe.src + `/${zleagueCookie.split(':')[2]}`;
             }
         };
-
         async function load_data(data){
             console.log(data.login)
         }

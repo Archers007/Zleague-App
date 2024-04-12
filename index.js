@@ -132,8 +132,8 @@ async function buildTournament(tournament_id, auth) {
 	teams.sort((a, b) => b.points - a.points); // Sort teams by points
 	teams.forEach((team) => {
 		if (team.teamName === "YouKnowMe") {
-			net_negative = "background-color: #DD2000;";
-			net_neutral = "background-color: #FFD700;";
+			net_negative = "background-color: rgba(0, 255, 0, 0.58);";
+			net_neutral = "background-color: rgba(235, 255, 0, 0.67;";
 			net_positive = "background-color: #00FF00;";
 			if (teamScoreboardMetadata.place >= 6) {
 				style = net_negative;
@@ -166,6 +166,13 @@ async function buildTournament(tournament_id, auth) {
 	html += `
                 </tbody>
             </table>
+            <script>
+                window.onload = function() {
+                    setInterval(function() {
+                        location.reload();
+                    }, 60000);
+                }
+            </script>
             <div class="btn" style="padding-top:20px;">
                 <a class="zleague-button" onclick="cancel_tournament('${tournament_id.id}');">Cancel?</a>
                 <a class="zleague-button" onclick="location.reload();">Refresh</a>
@@ -243,7 +250,6 @@ app.get("/tournament/:id", async (req, res) => {
                     margin: 20px auto;
                     margin-top: 0;
                     padding: 20px;
-                    background-color: #444; /* Darker container background */
                     border-radius: 5px;
                     // box-shadow: 0 0 10px rgba(255, 255, 255, 0.1); /* Subtle glow effect */
                 }
@@ -294,7 +300,6 @@ app.get("/tournament/:id", async (req, res) => {
                 }
 
                 th {
-                    background-color: #555; /* Darker header background color */
                 }
 
                 .center {
@@ -960,6 +965,11 @@ app.get("/cancel-tournament", async (req, res) => {
 	} catch (err) {
 		res.send(err);
 	}
+});
+
+app.get("/ping", (req, res) => {
+    console.log("ping");
+    res.send("pong");
 });
 
 app.get("*", (req, res) => {
