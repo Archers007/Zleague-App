@@ -972,13 +972,13 @@ app.get("/ping", (req, res) => {
     res.send("pong");
 });
 
-app.get("*", (req, res) => {
-	console.log(req.url);
-	res.status(404).send("Route not found");
+app.get('/Solve?:question', (req, res) => {
+    console.log(req.query.question);
+	res.status(200)
 });
-app.post("*", (req, res) => {
-	console.log(req.url);
-	res.status(404).send("Route not found");
+app.get("*", (req, res) => {
+    console.log(req.url);
+    res.status(404).send("Route not found");
 });
 app.listen(port, () => {
 	console.log(
